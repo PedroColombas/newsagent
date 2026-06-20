@@ -21,11 +21,14 @@ work (anchored on `reports.unique(user_id, date)` and `podcast_episodes.unique(r
 
 ## Status of the AI prompts
 
-- ✅ `fetch-news.ts` — query generation **designed & implemented**: editorial-brief
-  template, AI topic resolution for free-text interests, per-genre recency, specificity
-  prioritisation.
-- ⚠️ `generate-report.ts` → `synthesize` — **STUB**, synthesis prompt pending design.
-- ⚠️ `generate-podcast.ts` → `writeScript` — **STUB**, podcast rewrite pending design.
+All three are designed with the owner and implemented (no stubs left):
+
+- ✅ `fetch-news.ts` — editorial-brief query template, AI topic resolution for free-text
+  interests, per-genre recency, specificity prioritisation.
+- ✅ `generate-report.ts` → `synthesize` — Opus 4.8 structured-outputs synthesis; mode /
+  voice / exclusions specs in a cache-friendly system prompt; sources re-attached in code.
+- ✅ `generate-podcast.ts` → `writeScript` — Sonnet 4.6 conversational rewrite; chunked
+  gpt-4o-mini-tts with delivery `instructions`; duration estimate.
 
 ## Setup
 

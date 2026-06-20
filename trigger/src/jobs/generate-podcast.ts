@@ -5,9 +5,14 @@ import { synthesizeSpeech } from "../lib/openai-tts";
 import { withDiagnostics } from "../lib/diagnostics";
 
 const AUDIO_BUCKET = "podcast-audio";
-// OpenAI TTS timbre. Not user-configurable yet — the schema's `voice` is the WRITING
-// style, not a TTS voice. A user-selectable timbre could become a future preference.
-const TTS_VOICE = "alloy";
+
+// OpenAI TTS timbre + delivery steering. Not user-configurable yet — the schema's `voice`
+// is the WRITING style, not a TTS voice. A user-selectable timbre could be a future pref.
+// The `instructions` do most of the tone work, so the base voice matters less.
+const TTS_VOICE = "nova";
+const TTS_INSTRUCTIONS =
+  "Read this as a warm, engaging podcast host speaking to a single listener. Relaxed " +
+  "conversational pace, natural intonation, a touch of energy. Not a formal news reader.";
 
 export const generatePodcast = task({
   id: "generate-podcast",
@@ -50,12 +55,14 @@ export const generatePodcast = task({
     try {
       if (!markdown) throw new Error("report has no markdown to narrate");
 
-      // 1. Rewrite to a conversational script — ALWAYS conversational regardless of the
-      //    report's writing voice (CLAUDE.md). STUB prompt — collaborative.
+      // 1. Rewrite to a conversational spoken script — ALWAYS conversational regardless of
+      //    the report's writing voice (CLAUDE.md).
       const script = await withDiagnostics("podcast-script", () => writeScript(markdown));
 
-      // 2. Text -> speech (mp3).
-      const audio = await withDiagnostics("tts", () => synthesizeSpeech(script, TTS_VOICE));
+      // 2. Text -> speech (mp3), chunked under the TTS input cap and concatenated.
+      const audio = await withDiagnostics("tts", () =>
+        synthesizeSpeech(script, { voice: TTS_VOICE, instructions: TTS_INSTRUCTIONS }),
+      );
 
       // 3. Upload to the private bucket, namespaced by user (service_role bypasses storage
       //    RLS). `audio_url` stores the PATH, not a URL — see schema + 0003_storage.sql.
@@ -67,12 +74,15 @@ export const generatePodcast = task({
 
       await db
         .from("podcast_episodes")
-        .update({ script, audio_url: path, status: "complete" })
+        .update({
+          script,
+          audio_url: path,
+          duration_seconds: estimateDurationSeconds(script),
+          status: "complete",
+        })
         .eq("id", episodeId);
       logger.info("podcast complete", { reportId, episodeId, path });
 
-      // NOTE: duration_seconds left null for MVP — would need to probe the mp3 (or estimate
-      // from script length). Flagged for later.
       return { episodeId, skipped: false };
     } catch (error: any) {
       await db.from("podcast_episodes").update({ status: "failed" }).eq("id", episodeId);
@@ -81,17 +91,38 @@ export const generatePodcast = task({
   },
 });
 
-// ⚠️ STUB — podcast script prompt is COLLABORATIVE.
+// ─────────────────────────────────────────────────────────────────────────────
+// Podcast script — DESIGNED WITH THE OWNER. Always conversational regardless of the
+// report's writing voice (CLAUDE.md). Output is plain spoken words only — the TTS step
+// reads it verbatim, so no markdown, headings, bullets, or URLs. Model: Sonnet 4.6
+// (a style rewrite, not the heavy synthesis) — tunable via MODELS.podcastScript.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const PODCAST_SYSTEM = `You turn a written news report into a script for a short audio podcast episode, read aloud by a single host. The delivery is ALWAYS warm and conversational, regardless of how the written report was worded.
+
+Rules:
+- Output ONLY the words to be spoken. No markdown, no headings, no bullet points, no stage directions, no "[music]" cues.
+- Open with a brief, friendly intro (e.g. "Here's your briefing for today...") and end with a short sign-off.
+- Use natural spoken transitions between topics ("First up...", "In other news...", "Finally...").
+- Write for the ear: say dates and numbers naturally ("March third", "around twelve thousand"), expand symbols, and NEVER read out URLs or citations — name the outlet if it helps, but drop the links.
+- Keep it warm, clear, and engaging; contractions are good. Don't editorialise beyond what the report supports.
+- Match the report's depth: a short report makes a short episode, a long one a longer episode. Don't pad.`;
+
 async function writeScript(markdown: string): Promise<string> {
   const message = await anthropic().messages.create({
     model: MODELS.podcastScript,
-    max_tokens: 4096,
+    max_tokens: 8000,
+    system: PODCAST_SYSTEM,
     messages: [
-      {
-        role: "user",
-        content: `Rewrite this news report as a warm, conversational spoken-word podcast monologue (about 4-6 minutes). No headings or bullet points — natural speech only.\n\n${markdown}`,
-      },
+      { role: "user", content: `Here is today's report. Write the podcast script.\n\n${markdown}` },
     ],
   });
   return firstText(message.content);
+}
+
+// Rough runtime estimate for the player UI (~150 words per minute). The schema's
+// duration_seconds is nullable; this is a cheap estimate, not a probe of the audio.
+function estimateDurationSeconds(script: string): number {
+  const words = script.trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round((words / 150) * 60));
 }
