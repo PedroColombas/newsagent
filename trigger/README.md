@@ -19,13 +19,13 @@ work (anchored on `reports.unique(user_id, date)` and `podcast_episodes.unique(r
 - Shared DB types come from `../shared/types.ts` via the `@shared/*` path alias
   (type-only import, so it erases at build — no bundler reach-outside issues).
 
-## ⚠️ Collaborative stubs
+## Status of the AI prompts
 
-The prompts that drive report quality are placeholders, to be designed with the owner:
-
-- `fetch-news.ts` → `buildTopicQueries` / `translateInterest` (Perplexity query generation)
-- `generate-report.ts` → `synthesize` (report synthesis)
-- `generate-podcast.ts` → `writeScript` (podcast rewrite)
+- ✅ `fetch-news.ts` — query generation **designed & implemented**: editorial-brief
+  template, AI topic resolution for free-text interests, per-genre recency, specificity
+  prioritisation.
+- ⚠️ `generate-report.ts` → `synthesize` — **STUB**, synthesis prompt pending design.
+- ⚠️ `generate-podcast.ts` → `writeScript` — **STUB**, podcast rewrite pending design.
 
 ## Setup
 

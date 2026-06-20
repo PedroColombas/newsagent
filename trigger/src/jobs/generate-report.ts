@@ -120,6 +120,7 @@ async function synthesize(
         summary: t.content,
         sources: t.sources,
         level: t.level,
+        timeframe: t.recency,
       }),
     ),
   };
