@@ -15,7 +15,7 @@ export function openai(): OpenAI {
 // delivery (tone/pace), which the podcast step uses. ElevenLabs is the v2 path (CLAUDE.md).
 export const TTS_MODEL = "gpt-4o-mini-tts";
 
-// gpt-4o-mini-tts caps at ~2000 input tokens per request, so longer scripts must be
+// gpt-4o-mini-tts caps at ~2000 input tokens per request, so longer text must be
 // segmented. We chunk conservatively by characters (~1000 tokens of headroom).
 const MAX_TTS_CHARS = 4000;
 
@@ -42,6 +42,28 @@ export async function synthesizeSpeech(text: string, opts: SpeechOptions): Promi
 
   // Concatenating MP3 frame buffers plays back fine in standard players — good enough for
   // MVP. (A perfectly clean join would re-encode via ffmpeg; not worth it yet.)
+  return Buffer.concat(parts);
+}
+
+// A single spoken turn in a multi-voice dialogue.
+export interface DialogueTurn {
+  speaker: string;
+  text: string;
+}
+
+// Synthesise a dialogue: each turn is spoken in its speaker's voice, then the audio
+// segments are concatenated in order. `speakers` maps a speaker key → voice + delivery.
+// OpenAI TTS is one-voice-per-request, so a two-person episode is one request per turn.
+export async function synthesizeDialogue(
+  turns: DialogueTurn[],
+  speakers: Record<string, SpeechOptions>,
+): Promise<Buffer> {
+  const parts: Buffer[] = [];
+  for (const turn of turns) {
+    const voice = speakers[turn.speaker];
+    if (!voice || !turn.text.trim()) continue; // skip unknown speakers / empty turns
+    parts.push(await synthesizeSpeech(turn.text, voice));
+  }
   return Buffer.concat(parts);
 }
 

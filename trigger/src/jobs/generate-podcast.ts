@@ -1,18 +1,27 @@
 import { task, logger } from "@trigger.dev/sdk";
 import { supabase } from "../lib/supabase";
-import { anthropic, MODELS, firstText } from "../lib/anthropic";
-import { synthesizeSpeech } from "../lib/openai-tts";
 import { withDiagnostics } from "../lib/diagnostics";
+import { writeScript } from "../lib/podcast-script";
+import { synthesizeDialogue, type DialogueTurn, type SpeechOptions } from "../lib/openai-tts";
 
 const AUDIO_BUCKET = "podcast-audio";
 
-// OpenAI TTS timbre + delivery steering. Not user-configurable yet — the schema's `voice`
-// is the WRITING style, not a TTS voice. A user-selectable timbre could be a future pref.
-// The `instructions` do most of the tone work, so the base voice matters less.
-const TTS_VOICE = "nova";
-const TTS_INSTRUCTIONS =
-  "Read this as a warm, engaging podcast host speaking to a single listener. Relaxed " +
-  "conversational pace, natural intonation, a touch of energy. Not a formal news reader.";
+// Two-voice interview cast. Voices + delivery are tunable constants (not user-facing yet).
+// gpt-4o-mini-tts steers tone via `instructions`, so the personas do most of the work.
+const SPEAKERS: Record<string, SpeechOptions> = {
+  host: {
+    voice: "nova",
+    instructions:
+      "A warm, curious podcast host interviewing an expert. Friendly and engaged, " +
+      "natural pace, guiding the conversation for the listener.",
+  },
+  expert: {
+    voice: "onyx",
+    instructions:
+      "A knowledgeable analyst being interviewed. Explains clearly and conversationally " +
+      "at a measured pace, like a sharp guest on a quality news podcast.",
+  },
+};
 
 export const generatePodcast = task({
   id: "generate-podcast",
@@ -55,14 +64,13 @@ export const generatePodcast = task({
     try {
       if (!markdown) throw new Error("report has no markdown to narrate");
 
-      // 1. Rewrite to a conversational spoken script — ALWAYS conversational regardless of
-      //    the report's writing voice (CLAUDE.md).
-      const script = await withDiagnostics("podcast-script", () => writeScript(markdown));
+      // 1. Write a two-person interview script (host asks, expert answers) as structured turns.
+      const turns = await withDiagnostics("podcast-script", () => writeScript(markdown));
+      if (turns.length === 0) throw new Error("podcast script came back empty");
+      const script = renderTranscript(turns);
 
-      // 2. Text -> speech (mp3), chunked under the TTS input cap and concatenated.
-      const audio = await withDiagnostics("tts", () =>
-        synthesizeSpeech(script, { voice: TTS_VOICE, instructions: TTS_INSTRUCTIONS }),
-      );
+      // 2. Synthesise each turn in its speaker's voice; concatenate the segments in order.
+      const audio = await withDiagnostics("tts", () => synthesizeDialogue(turns, SPEAKERS));
 
       // 3. Upload to the private bucket, namespaced by user (service_role bypasses storage
       //    RLS). `audio_url` stores the PATH, not a URL — see schema + 0003_storage.sql.
@@ -77,11 +85,11 @@ export const generatePodcast = task({
         .update({
           script,
           audio_url: path,
-          duration_seconds: estimateDurationSeconds(script),
+          duration_seconds: estimateDurationSeconds(turns),
           status: "complete",
         })
         .eq("id", episodeId);
-      logger.info("podcast complete", { reportId, episodeId, path });
+      logger.info("podcast complete", { reportId, episodeId, path, turns: turns.length });
 
       return { episodeId, skipped: false };
     } catch (error: any) {
@@ -91,38 +99,17 @@ export const generatePodcast = task({
   },
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Podcast script — DESIGNED WITH THE OWNER. Always conversational regardless of the
-// report's writing voice (CLAUDE.md). Output is plain spoken words only — the TTS step
-// reads it verbatim, so no markdown, headings, bullets, or URLs. Model: Sonnet 4.6
-// (a style rewrite, not the heavy synthesis) — tunable via MODELS.podcastScript.
-// ─────────────────────────────────────────────────────────────────────────────
-
-const PODCAST_SYSTEM = `You turn a written news report into a script for a short audio podcast episode, read aloud by a single host. The delivery is ALWAYS warm and conversational, regardless of how the written report was worded.
-
-Rules:
-- Output ONLY the words to be spoken. No markdown, no headings, no bullet points, no stage directions, no "[music]" cues.
-- Open with a brief, friendly intro (e.g. "Here's your briefing for today...") and end with a short sign-off.
-- Use natural spoken transitions between topics ("First up...", "In other news...", "Finally...").
-- Write for the ear: say dates and numbers naturally ("March third", "around twelve thousand"), expand symbols, and NEVER read out URLs or citations — name the outlet if it helps, but drop the links.
-- Keep it warm, clear, and engaging; contractions are good. Don't editorialise beyond what the report supports.
-- Match the report's depth: a short report makes a short episode, a long one a longer episode. Don't pad.`;
-
-async function writeScript(markdown: string): Promise<string> {
-  const message = await anthropic().messages.create({
-    model: MODELS.podcastScript,
-    max_tokens: 8000,
-    system: PODCAST_SYSTEM,
-    messages: [
-      { role: "user", content: `Here is today's report. Write the podcast script.\n\n${markdown}` },
-    ],
-  });
-  return firstText(message.content);
+// Render the dialogue as a readable transcript for the `script` column / any transcript UI.
+function renderTranscript(turns: DialogueTurn[]): string {
+  return turns
+    .map((t) => `${t.speaker === "host" ? "Host" : "Expert"}: ${t.text.trim()}`)
+    .join("\n\n");
 }
 
-// Rough runtime estimate for the player UI (~150 words per minute). The schema's
-// duration_seconds is nullable; this is a cheap estimate, not a probe of the audio.
-function estimateDurationSeconds(script: string): number {
-  const words = script.trim().split(/\s+/).filter(Boolean).length;
+// Rough runtime estimate for the player UI (~150 words per minute across all turns).
+function estimateDurationSeconds(turns: DialogueTurn[]): number {
+  const words = turns
+    .map((t) => t.text.trim().split(/\s+/).filter(Boolean).length)
+    .reduce((sum, n) => sum + n, 0);
   return Math.max(1, Math.round((words / 150) * 60));
 }

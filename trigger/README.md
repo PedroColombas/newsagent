@@ -27,8 +27,12 @@ All three are designed with the owner and implemented (no stubs left):
   interests, per-genre recency, specificity prioritisation.
 - ✅ `generate-report.ts` → `synthesize` — Opus 4.8 structured-outputs synthesis; mode /
   voice / exclusions specs in a cache-friendly system prompt; sources re-attached in code.
-- ✅ `generate-podcast.ts` → `writeScript` — Sonnet 4.6 conversational rewrite; chunked
-  gpt-4o-mini-tts with delivery `instructions`; duration estimate.
+- ✅ `generate-podcast.ts` → `lib/podcast-script.ts` — Sonnet 4.6 two-voice **interview**
+  script (host + expert, structured turns); per-turn multi-voice gpt-4o-mini-tts concatenated;
+  duration estimate.
+
+Preview the report and podcast prompts locally with just an Anthropic key:
+`npm run preview:synthesis` and `npm run preview:podcast`.
 
 ## Setup
 
