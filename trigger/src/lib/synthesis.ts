@@ -1,0 +1,131 @@
+import { anthropic, MODELS, firstText } from "./anthropic";
+import type { Preferences, ReportContent, ReportSection } from "@shared/types";
+import type { FetchedTopic } from "../jobs/fetch-news";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Report synthesis — DESIGNED WITH THE OWNER. Pure LLM logic (no Trigger/DB deps) so it
+// can be previewed in isolation (scripts/preview-synthesis.ts); generate-report wraps it.
+//   • Structured outputs (output_config.format): one call returns sections + markdown.
+//   • report_mode controls length/structure, voice controls tone, exclusions are a hard
+//     filter. Those specs live in the static system prompt below (cache-friendly).
+//   • Claude tags each section with the index of the fetched topic it's based on; we
+//     re-attach the real sources/level/timeframe in code, so URLs are never invented.
+//   • Model: Opus 4.8 (quality-first). Tunable via MODELS.synthesis in lib/anthropic.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Static — identical for every user + run, so it sits in `system` with cache_control.
+// (Opus only caches a prefix once it's >=4096 tokens; below that this silently no-ops.)
+const SYNTHESIS_SYSTEM = `You are the synthesis engine for a personalised daily news briefing. You receive pre-fetched, per-topic research and turn it into a single report. You will be told which report mode and voice to use, plus any exclusions — apply them precisely.
+
+REPORT MODES (length + structure):
+- briefing: A fast scan. For each topic, a short bold headline then one sentence of context. Use bullet points. The whole report should be readable in under two minutes.
+- standard: For each topic, a short heading then 2-3 tight paragraphs covering what happened, the key facts, and why it matters.
+- deep_dive: Long-form analysis. Focus on the one or two most significant topics and omit minor ones. Give thorough context, implications, and connections — several paragraphs each.
+
+VOICES (tone):
+- neutral: Plain, factual, even-handed. No opinion or rhetorical flourish — wire-service style.
+- analytical: Explanatory. Connect cause and effect, add context and implications. Measured, expert tone.
+- conversational: Warm and direct, like a sharp friend explaining over coffee. Use contractions and plain language.
+- critical: Skeptical and evaluative. Question claims, note what is missing or spun, weigh significance. Pointed but fair.
+
+RULES:
+- Ground every claim in the provided research. Do not invent facts, events, numbers, or quotes.
+- Attribute claims in the prose to their source by name, and on the source's first mention add a brief, neutral note on what the outlet is and how reliable it is — e.g. "According to Nature, a peer-reviewed scientific journal, researchers...", or "Reuters, an international news agency, reports...". Add this note ONLY for outlets you genuinely recognise; if you do not recognise a source, say so honestly rather than implying authority (e.g. "according to [name], a personal blog whose claims aren't independently verified, ..."). Never overstate reliability. Draw the outlet name from the source's title or URL.
+- Keep one section per topic. Mode controls length, not grouping. In deep_dive you may drop low-priority topics, but never merge two topics into one section.
+- State each topic's time window in the prose using its recency value (day = the last 24 hours, week = the last 7 days, month = the last 30 days).
+- After each section in the markdown, list that topic's sources as "[title](url) — date", using only the sources provided for that topic. Never fabricate or alter URLs. (The credibility note belongs in the prose, not here.)
+- If a topic's research is thin or empty, say so in one sentence rather than padding.
+- Apply exclusions as a hard filter: omit anything matching, even if present in the research.
+
+OUTPUT: Return JSON matching the schema. "sections" has one entry per topic you include — each with "topic_index" (the index of the topic in the input array it is based on), a "heading", and a "summary" written in the selected mode and voice. "markdown" is the full rendered report: headings, prose, and the per-section source lists.`;
+
+const SYNTHESIS_SCHEMA = {
+  type: "object",
+  properties: {
+    sections: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          topic_index: {
+            type: "integer",
+            description: "Index of the input topic this section is based on",
+          },
+          heading: { type: "string", description: "Display heading for the section" },
+          summary: {
+            type: "string",
+            description: "The write-up for this topic, in the selected mode and voice",
+          },
+        },
+        required: ["topic_index", "heading", "summary"],
+        additionalProperties: false,
+      },
+    },
+    markdown: {
+      type: "string",
+      description: "The full report as markdown, including the per-section source lists",
+    },
+  },
+  required: ["sections", "markdown"],
+  additionalProperties: false,
+};
+
+interface SynthesisOutput {
+  sections: { topic_index: number; heading: string; summary: string }[];
+  markdown: string;
+}
+
+export async function synthesize(
+  prefs: Preferences,
+  topics: FetchedTopic[],
+): Promise<{ content: ReportContent; markdown: string }> {
+  // Per-user, volatile content goes in the user turn — after the cached system prefix.
+  const topicsForModel = topics.map((t, index) => ({
+    index,
+    topic: t.topic,
+    recency: t.recency,
+    content: t.content,
+    sources: t.sources,
+  }));
+
+  const userMessage =
+    `Report mode: ${prefs.report_mode}\n` +
+    `Voice: ${prefs.voice}\n` +
+    `Exclusions: ${prefs.exclusions || "none"}\n\n` +
+    `Topics (JSON array; use each item's "index" as topic_index):\n` +
+    `${JSON.stringify(topicsForModel)}\n\n` +
+    "Write the report now.";
+
+  const message = await anthropic().messages.create({
+    model: MODELS.synthesis,
+    max_tokens: 12000,
+    thinking: { type: "adaptive" },
+    output_config: {
+      format: { type: "json_schema", schema: SYNTHESIS_SCHEMA },
+      effort: "medium",
+    },
+    system: [
+      { type: "text", text: SYNTHESIS_SYSTEM, cache_control: { type: "ephemeral" } },
+    ],
+    messages: [{ role: "user", content: userMessage }],
+  });
+
+  const parsed = JSON.parse(firstText(message.content)) as SynthesisOutput;
+
+  // Re-attach the real sources / level / timeframe from the fetched topics by index, so
+  // URLs and metadata are never model-invented. Out-of-range indices are dropped.
+  const sections: ReportSection[] = parsed.sections
+    .filter((s) => topics[s.topic_index] !== undefined)
+    .map((s): ReportSection => {
+      const t = topics[s.topic_index];
+      return {
+        topic: s.heading || t.topic,
+        summary: s.summary,
+        sources: t.sources,
+        level: t.level,
+        timeframe: t.recency,
+      };
+    });
+
+  return { content: { sections }, markdown: parsed.markdown };
+}
