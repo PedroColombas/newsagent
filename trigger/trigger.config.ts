@@ -1,10 +1,8 @@
 import { defineConfig } from "@trigger.dev/sdk";
 
 export default defineConfig({
-  // TODO: replace once the Trigger.dev project is created in the KUDA org.
-  //  - We can create it via the Trigger MCP, then copy the ref (starts with "proj_").
-  //  - The project ref is NOT a secret, so hardcoding it here is fine.
-  project: "proj_PLACEHOLDER_CREATE_PROJECT_FIRST",
+  // NewsAgent project in the KUDA org. The project ref is not a secret.
+  project: "proj_zbfstdzftopvqmzelfrq",
 
   runtime: "node",
   // COMPOSIO_TRIGGER_LEARNINGS Trigger §4 — "debug" is filtered out by default; use "info".
