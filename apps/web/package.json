@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.106.0",
     "@supabase/supabase-js": "^2.108.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -20,6 +21,7 @@
     "@types/node": "^26.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@vercel/node": "^5.8.21",
     "@vitejs/plugin-react": "^6.0.0",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.0",

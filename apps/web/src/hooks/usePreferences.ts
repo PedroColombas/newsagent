@@ -1,0 +1,98 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Preferences } from "@shared/types";
+import { useAuth } from "../auth/AuthProvider";
+import { supabase } from "../lib/supabase";
+
+export type SaveStatus = "idle" | "saving" | "saved" | "error";
+
+// Columns the frontend is allowed to edit (everything except id / user_id / updated_at).
+const EDITABLE_COLUMNS = [
+  "genres",
+  "subtopics",
+  "custom_interests",
+  "exclusions",
+  "report_mode",
+  "voice",
+  "max_topics",
+  "default_recency",
+  "recency_by_genre",
+  "podcast_enabled",
+  "delivery_hour",
+] as const;
+
+function editableSubset(prefs: Preferences): Partial<Preferences> {
+  const out: Record<string, unknown> = {};
+  for (const col of EDITABLE_COLUMNS) out[col] = prefs[col];
+  // Don't persist blank custom interests left mid-edit.
+  out.custom_interests = (prefs.custom_interests ?? []).map((s) => s.trim()).filter(Boolean);
+  return out as Partial<Preferences>;
+}
+
+/**
+ * Loads the signed-in user's single preferences row and auto-saves edits
+ * (debounced) back to Supabase. The row is created on signup by a DB trigger;
+ * we insert a default if it's somehow missing.
+ */
+export function usePreferences() {
+  const { user } = useAuth();
+  const [prefs, setPrefs] = useState<Preferences | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState<SaveStatus>("idle");
+  // Only auto-save after the user actually edits — not on the initial load.
+  const dirty = useRef(false);
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    setLoading(true);
+    dirty.current = false;
+
+    (async () => {
+      const { data } = await supabase
+        .from("preferences")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!active) return;
+
+      if (data) {
+        setPrefs(data as Preferences);
+      } else {
+        // Fallback: trigger didn't create a row — insert one with DB defaults.
+        const { data: inserted } = await supabase
+          .from("preferences")
+          .insert({ user_id: user.id })
+          .select()
+          .single();
+        if (active && inserted) setPrefs(inserted as Preferences);
+      }
+      if (active) setLoading(false);
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  // Debounced auto-save: whenever prefs change after an edit, persist the editable subset.
+  useEffect(() => {
+    if (!user || !prefs || !dirty.current) return;
+    setStatus("saving");
+    const timer = setTimeout(async () => {
+      const { error } = await supabase
+        .from("preferences")
+        .update(editableSubset(prefs))
+        .eq("user_id", user.id);
+      setStatus(error ? "error" : "saved");
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [prefs, user]);
+
+  const update = useCallback((patch: Partial<Preferences>) => {
+    dirty.current = true;
+    setPrefs((cur) => (cur ? { ...cur, ...patch } : cur));
+  }, []);
+
+  return { prefs, loading, status, update };
+}
