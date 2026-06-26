@@ -11,11 +11,11 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "NewsAgent",
-        short_name: "NewsAgent",
-        description: "Your personalised daily news report and podcast.",
-        theme_color: "#0f172a",
-        background_color: "#0f172a",
+        name: "Daily Brief",
+        short_name: "Daily Brief",
+        description: "Your day, briefed — a personalised daily news report and podcast.",
+        theme_color: "#faf8f4",
+        background_color: "#faf8f4",
         display: "standalone",
         start_url: "/",
         icons: [

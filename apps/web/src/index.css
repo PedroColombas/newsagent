@@ -1,7 +1,35 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+/* Warm editorial palette. Light is primary; flips to dark with the system setting.
+   Used via arbitrary values, e.g. bg-[var(--paper)] text-[var(--ink)] text-[var(--accent)]. */
 :root {
-  color-scheme: light dark;
+  --paper: #faf8f4; /* screen background */
+  --surface: #ffffff; /* cards / inputs */
+  --ink: #1c1a17; /* primary text */
+  --muted: #6f6a61; /* secondary text */
+  --faint: #8a8579; /* labels / tertiary text */
+  --line: #ece6db; /* dividers / borders */
+  --accent: #c0512b; /* terracotta */
+  --on-accent: #ffffff; /* text on the accent */
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #161410;
+    --surface: #201d18;
+    --ink: #f3efe7;
+    --muted: #a39c8f;
+    --faint: #857e71;
+    --line: #2c281f;
+    --accent: #e2794d;
+    --on-accent: #1a120c;
+    color-scheme: dark;
+  }
 }
 
 html,
@@ -12,6 +40,11 @@ body,
 
 body {
   margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   /* Respect iPhone safe areas (notch / home indicator). */
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
     env(safe-area-inset-left);

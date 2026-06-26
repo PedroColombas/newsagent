@@ -5,7 +5,7 @@ import { BottomNav } from "./BottomNav";
 // thumb zone. max-w-md keeps it phone-width when viewed on a larger screen.
 export function AppShell() {
   return (
-    <div className="mx-auto flex h-full max-w-md flex-col bg-slate-50 dark:bg-slate-950">
+    <div className="mx-auto flex h-full max-w-md flex-col bg-[var(--paper)]">
       <main className="flex-1 overflow-y-auto">
         <Outlet />
       </main>
