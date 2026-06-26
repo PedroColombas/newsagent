@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  html,body{margin:0;padding:0;}
+</style>
+</helmet>
+<div style="width:max-content;min-width:100%;min-height:100vh;box-sizing:border-box;padding:56px;background:#e7e5e0;font-family:'Hanken Grotesk',sans-serif;color:#1c1a17;">
+
+  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:34px;max-width:760px;">
+    <div style="font-size:34px;font-weight:700;letter-spacing:-0.02em;">Today — high fidelity</div>
+    <div style="font-size:17px;color:#6f6a61;line-height:1.5;">Editorial reading direction · all-sans (Hanken Grotesk) · warm palette with a restrained terracotta accent. Light is the priority; dark is supported.</div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:26px;">
+    <span style="width:30px;height:30px;border-radius:50%;background:#c0512b;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex:none;">✓</span>
+    <div style="display:flex;flex-direction:column;"><span style="font-size:18px;font-weight:700;letter-spacing:-0.01em;">Chosen direction — all sans</span><span style="font-size:13.5px;color:#8a8579;">Hanken Grotesk throughout · light primary, dark supported</span></div>
+  </div>
+
+  <div style="display:flex;gap:44px;align-items:flex-start;">
+
+    <!-- LIGHT · PRIMARY -->
+    <div style="flex:none;width:320px;display:flex;flex-direction:column;gap:13px;">
+      <span style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#1c1a17;"><span style="width:13px;height:13px;border-radius:50%;border:2px solid #c0512b;background:linear-gradient(135deg,#fff 50%,#c0512b 50%);"></span>Light — primary</span>
+      <div style="width:320px;background:#0e0e10;border-radius:48px;padding:11px;box-shadow:0 26px 55px -14px rgba(45,32,20,.45),0 8px 18px rgba(0,0,0,.16);">
+        <div style="position:relative;height:688px;background:#faf8f4;border-radius:38px;overflow:hidden;display:flex;flex-direction:column;color:#1c1a17;">
+          <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:104px;height:30px;background:#08080a;border-radius:16px;z-index:6;"></div>
+          <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:17px 26px 6px;">
+            <span style="font-size:15px;font-weight:600;letter-spacing:.2px;">9:41</span>
+            <div style="display:flex;align-items:center;gap:7px;color:#1c1a17;"><svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.6" y="5" width="3" height="6" rx="1"/><rect x="9.2" y="2.6" width="3" height="8.4" rx="1"/><rect x="13.8" y="0" width="3" height="11" rx="1"/></svg><svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.2 L1.3 4.3 a9.4 9.4 0 0 1 13.4 0 Z"/></svg><svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.6" width="21" height="10.8" rx="3" stroke="currentColor" stroke-opacity=".4"/><rect x="2.4" y="2.5" width="14.5" height="7" rx="1.6" fill="currentColor"/><rect x="23" y="3.6" width="2.2" height="4.8" rx="1" fill="currentColor" fill-opacity=".4"/></svg></div>
+          </div>
+          <div style="flex:1;position:relative;overflow:hidden;">
+            <div style="padding:8px 22px 30px;display:flex;flex-direction:column;">
+              <span style="font-size:12px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:#6f6a61;">Monday · June 22</span>
+              <h1 style="font-size:28px;line-height:1.1;font-weight:700;letter-spacing:-.025em;margin:9px 0 0;">Good morning, Alex</h1>
+              <span style="font-size:13.5px;color:#6f6a61;margin-top:9px;">Your report · 6 topics · 4 min read</span>
+              <sc-if value="{{ showAudioCard }}" hint-placeholder-val="{{ true }}"><div style="margin-top:20px;display:flex;align-items:center;gap:13px;background:#ffffff;border:1px solid #ece6db;border-radius:16px;padding:12px 14px;box-shadow:0 1px 2px rgba(45,32,20,.05);"><div style="width:42px;height:42px;border-radius:50%;background:#c0512b;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 3px 9px rgba(192,81,43,.34);"><svg width="15" height="15" viewBox="0 0 16 16" fill="#fff"><path d="M5 3.4 L12.6 8 L5 12.6 Z"/></svg></div><div style="flex:1;display:flex;flex-direction:column;gap:2px;"><span style="font-size:15px;font-weight:600;">Listen to today’s report</span><span style="font-size:12.5px;color:#6f6a61;">8 min · AI narration</span></div><div style="display:flex;align-items:flex-end;gap:2.5px;height:22px;"><span style="width:2.5px;height:8px;border-radius:2px;background:rgba(192,81,43,.4);"></span><span style="width:2.5px;height:15px;border-radius:2px;background:rgba(192,81,43,.4);"></span><span style="width:2.5px;height:21px;border-radius:2px;background:rgba(192,81,43,.55);"></span><span style="width:2.5px;height:12px;border-radius:2px;background:rgba(192,81,43,.4);"></span><span style="width:2.5px;height:7px;border-radius:2px;background:rgba(192,81,43,.4);"></span></div></div></sc-if>
+              <div style="height:1px;background:#ece6db;margin:22px 0;"></div>
+              <div style="display:flex;flex-direction:column;gap:9px;">
+                <div style="display:flex;align-items:center;gap:7px;"><span style="width:6px;height:6px;border-radius:50%;background:#c0512b;"></span><span style="font-size:11.5px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:#6f6a61;">Technology</span></div>
+                <h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-.015em;margin:0;">The chip race accelerates as a new fab breaks ground</h2>
+                <p style="font-size:15px;line-height:1.56;color:#3c3933;margin:0;">TSMC and Intel both confirmed new fabrication sites this week, intensifying the push to onshore advanced chip production. Analysts expect capacity to nearly double by 2027.</p>
+                <sc-if value="{{ showSources }}" hint-placeholder-val="{{ true }}"><div style="font-size:12.5px;color:#8a8579;margin-top:1px;">Reuters · FT · +3 sources</div></sc-if>
+              </div>
+              <div style="height:1px;background:#ece6db;margin:22px 0;"></div>
+              <div style="display:flex;flex-direction:column;gap:9px;">
+                <div style="display:flex;align-items:center;gap:7px;"><span style="width:6px;height:6px;border-radius:50%;background:#c0512b;"></span><span style="font-size:11.5px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:#6f6a61;">Politics</span></div>
+                <h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-.015em;margin:0;">Coalition talks enter their final, decisive week</h2>
+                <p style="font-size:15px;line-height:1.56;color:#3c3933;margin:0;">Negotiators signalled a breakthrough on energy policy, leaving only budget allocations unresolved before Friday’s deadline.</p>
+                <sc-if value="{{ showSources }}" hint-placeholder-val="{{ true }}"><div style="font-size:12.5px;color:#8a8579;margin-top:1px;">BBC · Guardian · +2 sources</div></sc-if>
+              </div>
+              <div style="height:1px;background:#ece6db;margin:22px 0;"></div>
+              <div style="display:flex;flex-direction:column;gap:9px;">
+                <div style="display:flex;align-items:center;gap:7px;"><span style="width:6px;height:6px;border-radius:50%;background:#c0512b;"></span><span style="font-size:11.5px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:#6f6a61;">Finance</span></div>
+                <h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-.015em;margin:0;">Markets hold steady ahead of the Fed’s decision</h2>
+                <p style="font-size:15px;line-height:1.56;color:#3c3933;margin:0;">Investors are positioning cautiously as the central bank weighs its first rate move of the year, with futures pricing in a hold.</p>
+              </div>
+            </div>
+            <div style="position:absolute;left:0;right:0;bottom:0;height:44px;background:linear-gradient(transparent,#faf8f4);pointer-events:none;"></div>
+          </div>
+          <div style="flex:none;position:relative;height:78px;display:flex;align-items:flex-start;padding:9px 6px 0;background:rgba(250,248,244,.9);border-top:1px solid #ece6db;">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;color:#c0512b;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3.2"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12.5" y2="17"/></svg><span style="font-size:10.5px;font-weight:600;">Today</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;color:#9a9489;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.6 V12 L15 14"/></svg><span style="font-size:10.5px;font-weight:500;">History</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;color:#9a9489;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8.5" x2="20" y2="8.5"/><circle cx="15" cy="8.5" r="2.5" fill="currentColor" stroke="none"/><line x1="4" y1="15.5" x2="20" y2="15.5"/><circle cx="9" cy="15.5" r="2.5" fill="currentColor" stroke="none"/></svg><span style="font-size:10.5px;font-weight:500;">Prefs</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;color:#9a9489;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="3.4"/><path d="M5.5 19.5 a6.6 6.6 0 0 1 13 0"/></svg><span style="font-size:10.5px;font-weight:500;">Profile</span></div>
+            <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:128px;height:5px;border-radius:3px;background:#1c1a17;opacity:.22;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DARK · SUPPORTED -->
+    <div style="flex:none;width:320px;display:flex;flex-direction:column;gap:13px;">
+      <span style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#6f6a61;"><span style="width:13px;height:13px;border-radius:50%;background:#1c1a17;border:2px solid #1c1a17;"></span>Dark — supported</span>
+      <div style="width:320px;background:#0a0a0b;border-radius:48px;padding:11px;box-shadow:0 26px 55px -14px rgba(0,0,0,.55),0 8px 18px rgba(0,0,0,.3);">
+        <div style="position:relative;height:688px;background:#161410;border-radius:38px;overflow:hidden;display:flex;flex-direction:column;color:#f3efe7;">
+          <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:104px;height:30px;background:#000;border-radius:16px;z-index:6;"></div>
+          <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:17px 26px 6px;">
+            <span style="font-size:15px;font-weight:600;letter-spacing:.2px;">9:41</span>
+            <div style="display:flex;align-items:center;gap:7px;color:#f3efe7;"><svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.6" y="5" width="3" height="6" rx="1"/><rect x="9.2" y="2.6" width="3" height="8.4" rx="1"/><rect x="13.8" y="0" width="3" height="11" rx="1"/></svg><svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.2 L1.3 4.3 a9.4 9.4 0 0 1 13.4 0 Z"/></svg><svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="0.5" y="0.6" width="21" height="10.8" rx="3" stroke="currentColor" stroke-opacity=".4"/><rect x="2.4" y="2.5" width="14.5" height="7" rx="1.6" fill="currentColor"/><rect x="23" y="3.6" width="2.2" height="4.8" rx="1" fill="currentColor" fill-opacity=".4"/></svg></div>
+          </div>
+          <div style="flex:1;position:relative;overflow:hidden;">
+            <div style="padding:8px 22px 30px;display:flex;flex-direction:column;">
+              <span style="font-size:12px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:#a39c8f;">Monday · June 22</span>
+              <h1 style="font-size:28px;line-height:1.1;font-weight:700;letter-spacing:-.025em;margin:9px 0 0;">Good morning, Alex</h1>
+              <span style="font-size:13.5px;color:#a39c8f;margin-top:9px;">Your report · 6 topics · 4 min read</span>
+              <sc-if value="{{ showAudioCard }}" hint-placeholder-val="{{ true }}"><div style="margin-top:20px;display:flex;align-items:center;gap:13px;background:#201d18;border:1px solid #2e2a22;border-radius:16px;padding:12px 14px;"><div style="width:42px;height:42px;border-radius:50%;background:#e2794d;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 3px 9px rgba(226,121,77,.3);"><svg width="15" height="15" viewBox="0 0 16 16" fill="#1a120c"><path d="M5 3.4 L12.6 8 L5 12.6 Z"/></svg></div><div style="flex:1;display:flex;flex-direction:column;gap:2px;"><span style="font-size:15px;font-weight:600;">Listen to today’s report</span><span style="font-size:12.5px;color:#a39c8f;">8 min · AI narration</span></div><div style="display:flex;align-items:flex-end;gap:2.5px;height:22px;"><span style="width:2.5px;height:8px;border-radius:2px;background:rgba(226,121,77,.45);"></span><span style="width:2.5px;height:15px;border-radius:2px;background:rgba(226,121,77,.45);"></span><span style="width:2.5px;height:21px;border-radius:2px;background:rgba(226,121,77,.65);"></span><span style="width:2.5px;height:12px;border-radius:2px;background:rgba(226,121,77,.45);"></span><span style="width:2.5px;height:7px;border-radius:2px;background:rgba(226,121,77,.45);"></span></div></div></sc-if>
+              <div style="height:1px;background:#2c281f;margin:22px 0;"></div>
+              <div style="display:flex;flex-direction:column;gap:9px;">
+                <div style="display:flex;align-items:center;gap:7px;"><span style="width:6px;height:6px;border-radius:50%;background:#e2794d;"></span><span style="font-size:11.5px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:#a39c8f;">Technology</span></div>
+                <h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-.015em;margin:0;">The chip race accelerates as a new fab breaks ground</h2>
+                <p style="font-size:15px;line-height:1.56;color:#cfc8bb;margin:0;">TSMC and Intel both confirmed new fabrication sites this week, intensifying the push to onshore advanced chip production. Analysts expect capacity to nearly double by 2027.</p>
+                <sc-if value="{{ showSources }}" hint-placeholder-val="{{ true }}"><div style="font-size:12.5px;color:#857e71;margin-top:1px;">Reuters · FT · +3 sources</div></sc-if>
+              </div>
+              <div style="height:1px;background:#2c281f;margin:22px 0;"></div>
+              <div style="display:flex;flex-direction:column;gap:9px;">
+                <div style="display:flex;align-items:center;gap:7px;"><span style="width:6px;height:6px;border-radius:50%;background:#e2794d;"></span><span style="font-size:11.5px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:#a39c8f;">Politics</span></div>
+                <h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-.015em;margin:0;">Coalition talks enter their final, decisive week</h2>
+                <p style="font-size:15px;line-height:1.56;color:#cfc8bb;margin:0;">Negotiators signalled a breakthrough on energy policy, leaving only budget allocations unresolved before Friday’s deadline.</p>
+                <sc-if value="{{ showSources }}" hint-placeholder-val="{{ true }}"><div style="font-size:12.5px;color:#857e71;margin-top:1px;">BBC · Guardian · +2 sources</div></sc-if>
+              </div>
+              <div style="height:1px;background:#2c281f;margin:22px 0;"></div>
+              <div style="display:flex;flex-direction:column;gap:9px;">
+                <div style="display:flex;align-items:center;gap:7px;"><span style="width:6px;height:6px;border-radius:50%;background:#e2794d;"></span><span style="font-size:11.5px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:#a39c8f;">Finance</span></div>
+                <h2 style="font-size:20px;line-height:1.3;font-weight:600;letter-spacing:-.015em;margin:0;">Markets hold steady ahead of the Fed’s decision</h2>
+                <p style="font-size:15px;line-height:1.56;color:#cfc8bb;margin:0;">Investors are positioning cautiously as the central bank weighs its first rate move of the year, with futures pricing in a hold.</p>
+              </div>
+            </div>
+            <div style="position:absolute;left:0;right:0;bottom:0;height:44px;background:linear-gradient(transparent,#161410);pointer-events:none;"></div>
+          </div>
+          <div style="flex:none;position:relative;height:78px;display:flex;align-items:flex-start;padding:9px 6px 0;background:rgba(22,20,16,.9);border-top:1px solid #2c281f;">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;color:#e2794d;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3.2"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12.5" y2="17"/></svg><span style="font-size:10.5px;font-weight:600;">Today</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;color:#7d766a;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.6 V12 L15 14"/></svg><span style="font-size:10.5px;font-weight:500;">History</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;color:#7d766a;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8.5" x2="20" y2="8.5"/><circle cx="15" cy="8.5" r="2.5" fill="currentColor" stroke="none"/><line x1="4" y1="15.5" x2="20" y2="15.5"/><circle cx="9" cy="15.5" r="2.5" fill="currentColor" stroke="none"/></svg><span style="font-size:10.5px;font-weight:500;">Prefs</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;color:#7d766a;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="3.4"/><path d="M5.5 19.5 a6.6 6.6 0 0 1 13 0"/></svg><span style="font-size:10.5px;font-weight:500;">Profile</span></div>
+            <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:128px;height:5px;border-radius:3px;background:#f3efe7;opacity:.2;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;showAudioCard&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot; },
+  &quot;showSources&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot; }
+}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      showAudioCard: this.props.showAudioCard ?? true,
+      showSources: this.props.showSources ?? true,
+    };
+  }
+}
+</script>
+</body>
+</html>
