@@ -1,6 +1,9 @@
+import { useRef, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider";
+import { usePreferences } from "./hooks/usePreferences";
 import { AppShell } from "./components/AppShell";
+import { Onboarding } from "./pages/Onboarding";
 import { Login } from "./pages/Login";
 import { Today } from "./pages/Today";
 import { History } from "./pages/History";
@@ -10,13 +13,24 @@ import { Profile } from "./pages/Profile";
 export function App() {
   const { session, loading } = useAuth();
 
-  if (loading) {
-    return <div className="flex h-full items-center justify-center text-slate-400">Loading…</div>;
-  }
+  if (loading) return <Splash />;
+  // Logged out → sign in. Logged in → first-run gate, then the tabbed app.
+  if (!session) return <Login />;
+  return <AuthedApp />;
+}
 
-  // Logged out → magic-link login. Logged in → the tabbed app shell.
-  if (!session) {
-    return <Login />;
+function AuthedApp() {
+  const { prefs, loading, update } = usePreferences();
+  // Decide once, on load, whether this is a first run — so editing genres inside the
+  // wizard doesn't immediately flip us out of it. Exit only when the wizard says so.
+  const startedEmpty = useRef<boolean | null>(null);
+  const [finishedOnboarding, setFinishedOnboarding] = useState(false);
+
+  if (loading || !prefs) return <Splash />;
+  if (startedEmpty.current === null) startedEmpty.current = prefs.genres.length === 0;
+
+  if (startedEmpty.current && !finishedOnboarding) {
+    return <Onboarding prefs={prefs} update={update} onDone={() => setFinishedOnboarding(true)} />;
   }
 
   return (
@@ -30,4 +44,8 @@ export function App() {
       </Route>
     </Routes>
   );
+}
+
+function Splash() {
+  return <div className="flex h-full items-center justify-center text-[var(--faint)]">Loading…</div>;
 }
