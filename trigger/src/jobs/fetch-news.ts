@@ -4,6 +4,7 @@ import { anthropic, MODELS, firstText } from "../lib/anthropic";
 import { perplexitySearch } from "../lib/perplexity";
 import { withDiagnostics } from "../lib/diagnostics";
 import { generateReport } from "./generate-report";
+import { planReportSections } from "../../../shared/plan-topics";
 import type { Preferences, Recency, ReportSource } from "@shared/types";
 
 // A topic resolved to a single editorial-brief Perplexity query (one query per topic).
@@ -97,33 +98,24 @@ function recencyForGenre(prefs: Preferences, genre: string | null): Recency {
 }
 
 async function buildTopicQueries(prefs: Preferences): Promise<TopicQuery[]> {
-  const topics: TopicQuery[] = [];
-
-  // Level 1 — genres
-  for (const genre of prefs.genres) {
-    const recency = recencyForGenre(prefs, genre);
-    topics.push({ topic: genre, level: 1, genre, recency, query: editorialQuery(genre, recency) });
+  // Which sections (and their order + cap) is shared with the app's edition preview via
+  // planReportSections, so the two never drift. Here we resolve each into a query.
+  const out: TopicQuery[] = [];
+  for (const planned of planReportSections(prefs)) {
+    // L3 custom interests: sharpen the raw text into a clean search label (only for topics
+    // that survived the cap, so we don't waste calls on overflow).
+    const topic =
+      planned.level === 3 ? await resolveInterestTopic(planned.topic) : planned.topic;
+    const recency = recencyForGenre(prefs, planned.genre);
+    out.push({
+      topic,
+      level: planned.level,
+      genre: planned.genre,
+      recency,
+      query: editorialQuery(topic, recency),
+    });
   }
-
-  // Level 2 — subtopics, keyed by their genre
-  for (const [genre, subs] of Object.entries(prefs.subtopics ?? {})) {
-    const recency = recencyForGenre(prefs, genre);
-    for (const sub of subs) {
-      topics.push({ topic: sub, level: 2, genre, recency, query: editorialQuery(sub, recency) });
-    }
-  }
-
-  // Level 3 — free-text custom interests; Claude extracts a clean topic, default recency
-  for (const interest of prefs.custom_interests ?? []) {
-    const topic = await resolveInterestTopic(interest);
-    const recency = prefs.default_recency;
-    topics.push({ topic, level: 3, genre: null, recency, query: editorialQuery(topic, recency) });
-  }
-
-  // Prioritise by specificity (L3 > L2 > L1) and cap at max_topics. A stable sort keeps the
-  // user's original ordering within each level.
-  topics.sort((a, b) => b.level - a.level);
-  return topics.slice(0, prefs.max_topics);
+  return out;
 }
 
 async function resolveInterestTopic(interest: string): Promise<string> {
