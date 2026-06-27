@@ -10,10 +10,14 @@ import {
   estimateReadMinutes,
   snippet,
 } from "../lib/report-format";
+import { usePlayer } from "../player/PlayerProvider";
+import type { PlayerEpisode } from "../player/PlayerProvider";
+import { PlayIcon } from "../components/ui/icons";
 
 export function Today() {
   const { user } = useAuth();
   const { report, episode, loading } = useLatestReport();
+  const { play } = usePlayer();
   const navigate = useNavigate();
 
   if (loading) {
@@ -39,6 +43,16 @@ export function Today() {
   const sections = report.content.sections;
   const name = displayName(user);
   const minutes = estimateReadMinutes(sections.map((s) => s.summary));
+  const playable: PlayerEpisode | null =
+    episode?.status === "complete" && episode.audio_url
+      ? {
+          episodeId: episode.id,
+          reportId: report.id,
+          date: report.date,
+          audioPath: episode.audio_url,
+          durationSeconds: episode.duration_seconds,
+        }
+      : null;
 
   return (
     <section className="px-6 pb-12 pt-6">
@@ -50,11 +64,35 @@ export function Today() {
         {name ? `, ${name}` : ""}
       </h1>
       <span className="mt-2 block text-[13.5px] text-[var(--muted)]">
-        Your brief · {sections.length} {sections.length === 1 ? "topic" : "topics"} · {minutes} min
-        read{episode ? " · Podcast" : ""}
+        Your brief · {sections.length} {sections.length === 1 ? "topic" : "topics"} · {minutes} min read
       </span>
 
-      <div className="mt-3 flex flex-col">
+      {playable && (
+        <button
+          onClick={() => void play(playable)}
+          className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3 text-left"
+        >
+          <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[var(--accent)] text-[var(--on-accent)] shadow-[0_3px_9px_rgba(192,81,43,0.34)]">
+            <PlayIcon />
+          </span>
+          <span className="flex flex-1 flex-col">
+            <span className="text-[15px] font-semibold">Listen to today's brief</span>
+            <span className="text-[12.5px] text-[var(--muted)]">
+              {playable.durationSeconds
+                ? `${Math.max(1, Math.round(playable.durationSeconds / 60))} min`
+                : "Audio"}{" "}
+              · AI narration
+            </span>
+          </span>
+          <span className="flex h-[22px] items-end gap-[2.5px]">
+            {[8, 15, 21, 12, 7].map((h, i) => (
+              <span key={i} className="w-[2.5px] rounded bg-[var(--accent)]/50" style={{ height: h }} />
+            ))}
+          </span>
+        </button>
+      )}
+
+      <div className="mt-5 flex flex-col">
         {sections.map((s, i) => (
           <button
             key={i}
