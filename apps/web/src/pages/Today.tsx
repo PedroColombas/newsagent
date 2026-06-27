@@ -51,6 +51,7 @@ export function Today() {
           date: report.date,
           audioPath: episode.audio_url,
           durationSeconds: episode.duration_seconds,
+          chapters: episode.chapters ?? [],
         }
       : null;
 

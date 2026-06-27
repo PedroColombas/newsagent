@@ -49,6 +49,7 @@ export async function synthesizeSpeech(text: string, opts: SpeechOptions): Promi
 export interface DialogueTurn {
   speaker: string;
   text: string;
+  section?: number; // 0-based report section index this turn covers (drives podcast chapters)
 }
 
 // Synthesise a dialogue: each turn is spoken in its speaker's voice, then the audio

@@ -69,6 +69,13 @@ export interface Report {
   created_at: string;
 }
 
+// A chapter marker within a podcast episode. `fraction` (0..1) is the start position as a
+// share of the episode, multiplied by the real audio duration at play time.
+export interface PodcastChapter {
+  title: string;
+  fraction: number;
+}
+
 export interface PodcastEpisode {
   id: string;
   report_id: string;
@@ -76,6 +83,7 @@ export interface PodcastEpisode {
   script: string | null;
   audio_url: string | null;       // storage path
   duration_seconds: number | null;
+  chapters: PodcastChapter[];     // per-topic markers for the player
   status: PodcastStatus;
   created_at: string;
 }

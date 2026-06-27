@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { withDiagnostics } from "../lib/diagnostics";
 import { writeScript } from "../lib/podcast-script";
 import { synthesizeDialogue, type DialogueTurn, type SpeechOptions } from "../lib/openai-tts";
+import type { ReportContent } from "@shared/types";
 
 const AUDIO_BUCKET = "podcast-audio";
 
@@ -32,12 +33,13 @@ export const generatePodcast = task({
 
     const { data: report, error: reportError } = await db
       .from("reports")
-      .select("id, user_id, markdown")
+      .select("id, user_id, markdown, content")
       .eq("id", reportId)
       .single();
     if (reportError) throw reportError;
     const userId = report!.user_id as string;
     const markdown = report!.markdown as string | null;
+    const sections = (report!.content as ReportContent | null)?.sections ?? [];
 
     // Idempotency anchor: podcast_episodes.unique(report_id).
     const { data: existing } = await db
@@ -64,10 +66,13 @@ export const generatePodcast = task({
     try {
       if (!markdown) throw new Error("report has no markdown to narrate");
 
-      // 1. Write a two-person interview script (host asks, expert answers) as structured turns.
-      const turns = await withDiagnostics("podcast-script", () => writeScript(markdown));
+      // 1. Write a two-person interview script (host asks, expert answers) as structured turns,
+      //    each tagged with the report section it covers (for chapters).
+      const headings = sections.map((s) => s.topic);
+      const turns = await withDiagnostics("podcast-script", () => writeScript(markdown, headings));
       if (turns.length === 0) throw new Error("podcast script came back empty");
       const script = renderTranscript(turns);
+      const chapters = computeChapters(turns, sections);
 
       // 2. Synthesise each turn in its speaker's voice; concatenate the segments in order.
       const audio = await withDiagnostics("tts", () => synthesizeDialogue(turns, SPEAKERS));
@@ -86,6 +91,7 @@ export const generatePodcast = task({
           script,
           audio_url: path,
           duration_seconds: estimateDurationSeconds(turns),
+          chapters,
           status: "complete",
         })
         .eq("id", episodeId);
@@ -112,4 +118,30 @@ function estimateDurationSeconds(turns: DialogueTurn[]): number {
     .map((t) => t.text.trim().split(/\s+/).filter(Boolean).length)
     .reduce((sum, n) => sum + n, 0);
   return Math.max(1, Math.round((words / 150) * 60));
+}
+
+// One chapter per topic, positioned by cumulative word count as a fraction (0..1) of the
+// whole script — the player scales these to the real audio duration. First appearance of
+// each section wins; sorted by position.
+function computeChapters(
+  turns: DialogueTurn[],
+  sections: { topic: string }[],
+): { title: string; fraction: number }[] {
+  if (sections.length === 0) return [];
+  const counts = turns.map((t) => t.text.trim().split(/\s+/).filter(Boolean).length);
+  const total = counts.reduce((sum, n) => sum + n, 0) || 1;
+
+  const seen = new Set<number>();
+  const chapters: { title: string; fraction: number }[] = [];
+  let cumulative = 0;
+  turns.forEach((turn, i) => {
+    const idx = Math.max(0, Math.min(sections.length - 1, turn.section ?? 0));
+    if (!seen.has(idx)) {
+      seen.add(idx);
+      chapters.push({ title: sections[idx].topic, fraction: cumulative / total });
+    }
+    cumulative += counts[i];
+  });
+
+  return chapters.sort((a, b) => a.fraction - b.fraction);
 }

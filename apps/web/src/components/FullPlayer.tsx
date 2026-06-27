@@ -1,9 +1,7 @@
-import type { MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import { usePlayer } from "../player/PlayerProvider";
 import { formatTime } from "../lib/format-time";
 import { PlayIcon, PauseIcon } from "./ui/icons";
-
-const RATES = [1, 1.25, 1.5, 2, 0.75];
 
 // Full-screen player; renders only when expanded, overlaying everything.
 export function FullPlayer() {
@@ -21,10 +19,19 @@ export function FullPlayer() {
     collapse,
   } = usePlayer();
 
+  const [showSpeed, setShowSpeed] = useState(false);
+  useEffect(() => {
+    if (!expanded) setShowSpeed(false);
+  }, [expanded]);
+
   if (!expanded || !episode) return null;
 
   const pct = duration ? Math.min(100, (currentTime / duration) * 100) : 0;
   const remaining = Math.max(0, duration - currentTime);
+  const frac = duration ? Math.min(1, currentTime / duration) : 0;
+  // Active chapter = the last one whose start the playhead has passed (chapters are sorted).
+  const activeChapter = episode.chapters.reduce((acc, ch, i) => (frac >= ch.fraction ? i : acc), 0);
+  const currentChapterTitle = episode.chapters[activeChapter]?.title;
   const d = new Date(`${episode.date}T00:00:00`);
   const weekday = d.toLocaleDateString(undefined, { weekday: "long" });
   const dayMonth = d.toLocaleDateString(undefined, { day: "numeric", month: "long" });
@@ -36,8 +43,26 @@ export function FullPlayer() {
     seek(Math.max(0, Math.min(1, frac)) * duration);
   }
 
-  function cycleRate() {
-    setRate(RATES[(RATES.indexOf(rate) + 1) % RATES.length]);
+  // Press the pill, hold, and slide horizontally to set the rate (~220px = full 0.5–1.5 sweep).
+  const speedDrag = useRef<{ x: number; rate: number } | null>(null);
+  function onSpeedPointerDown(e: PointerEvent<HTMLButtonElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    speedDrag.current = { x: e.clientX, rate };
+    setShowSpeed(true);
+  }
+  function onSpeedPointerMove(e: PointerEvent<HTMLButtonElement>) {
+    if (!speedDrag.current) return;
+    const raw = speedDrag.current.rate + (e.clientX - speedDrag.current.x) / 220;
+    setRate(Math.max(0.5, Math.min(1.5, Math.round(raw * 10) / 10)));
+  }
+  function onSpeedPointerUp(e: PointerEvent<HTMLButtonElement>) {
+    speedDrag.current = null;
+    setShowSpeed(false);
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* capture may already be released */
+    }
   }
 
   return (
@@ -83,10 +108,26 @@ export function FullPlayer() {
           <div className="text-[13px] text-[var(--muted)]">AI narration · {minutes} min</div>
         </div>
 
-        {/* Scrubber */}
+        {/* Current section + segmented scrubber */}
         <div className="mt-5 flex-none">
+          {currentChapterTitle && (
+            <div className="mb-2 flex items-center gap-2">
+              <span className="h-1.5 w-1.5 flex-none rounded-full bg-[var(--accent)]" />
+              <span className="truncate text-[13px] font-semibold">{currentChapterTitle}</span>
+            </div>
+          )}
           <div onClick={onScrub} className="relative h-1.5 cursor-pointer rounded-full bg-[var(--line)]">
-            <div className="absolute left-0 top-0 h-1.5 rounded-full bg-[var(--accent)]" style={{ width: `${pct}%` }} />
+            <div className="absolute left-0 top-0 h-full rounded-full bg-[var(--accent)]" style={{ width: `${pct}%` }} />
+            {/* Section splits */}
+            {episode.chapters.map((ch, i) =>
+              i > 0 && ch.fraction > 0 && ch.fraction < 1 ? (
+                <span
+                  key={i}
+                  className="absolute top-0 h-full w-[2px] bg-[var(--paper)]"
+                  style={{ left: `${ch.fraction * 100}%` }}
+                />
+              ) : null,
+            )}
             <div
               className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-[var(--accent)] shadow"
               style={{ left: `calc(${pct}% - 7px)` }}
@@ -111,13 +152,35 @@ export function FullPlayer() {
           <SkipButton dir="fwd" onClick={() => skip(15)} />
         </div>
 
-        {/* Speed */}
-        <div className="mt-6 flex flex-none items-center justify-center">
+        {/* Speed — press, hold, and slide the pill */}
+        <div className="relative mt-6 flex flex-none items-center justify-center">
+          {showSpeed && (
+            <div className="absolute bottom-full z-20 mb-3 w-60 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[0_10px_30px_-10px_rgba(45,32,20,0.3)]">
+              <div className="mb-2 text-center text-[15px] font-bold">{rate.toFixed(1)}×</div>
+              <div className="flex items-center gap-2 text-[11px] text-[var(--faint)]">
+                <span>0.5×</span>
+                <div className="relative h-1.5 flex-1 rounded-full bg-[var(--line)]">
+                  <div
+                    className="absolute left-0 top-0 h-full rounded-full bg-[var(--accent)]"
+                    style={{ width: `${((rate - 0.5) / 1) * 100}%` }}
+                  />
+                  <div
+                    className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-[var(--accent)] shadow"
+                    style={{ left: `calc(${((rate - 0.5) / 1) * 100}% - 7px)` }}
+                  />
+                </div>
+                <span>1.5×</span>
+              </div>
+            </div>
+          )}
           <button
-            onClick={cycleRate}
-            className="rounded-full border border-[var(--line)] px-4 py-1.5 text-[13px] font-semibold"
+            onPointerDown={onSpeedPointerDown}
+            onPointerMove={onSpeedPointerMove}
+            onPointerUp={onSpeedPointerUp}
+            onPointerCancel={onSpeedPointerUp}
+            className="relative z-20 touch-none select-none rounded-full border border-[var(--line)] px-4 py-1.5 text-[13px] font-semibold"
           >
-            {rate === 1 ? "1.0×" : `${rate}×`}
+            {rate.toFixed(1)}×
           </button>
         </div>
 

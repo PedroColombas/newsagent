@@ -1,5 +1,6 @@
 import { createContext, useContext, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import type { PodcastChapter } from "@shared/types";
 import { supabase } from "../lib/supabase";
 
 export interface PlayerEpisode {
@@ -8,6 +9,7 @@ export interface PlayerEpisode {
   date: string; // YYYY-MM-DD — for the player cover/label
   audioPath: string; // storage path in the podcast-audio bucket
   durationSeconds: number | null;
+  chapters: PodcastChapter[];
 }
 
 interface PlayerContextValue {

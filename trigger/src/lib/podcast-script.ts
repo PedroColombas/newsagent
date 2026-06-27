@@ -22,7 +22,8 @@ Rules:
 - Alternate naturally — the host asks and steers, the expert answers. Keep turns short to medium so it feels like a real back-and-forth.
 - Ground every claim in the report. Don't invent facts. Attribute to outlets by name, and when a source first comes up, briefly work in what it is and how trustworthy it is, spoken naturally — e.g. "...and that's from Nature, the peer-reviewed journal, so it's well-grounded", or "the Financial Times reported...". Only vouch for outlets you genuinely recognise; if a source is unfamiliar or looks low-quality, say so plainly rather than implying authority.
 - Write for the ear: say dates and numbers naturally, expand symbols, and NEVER read out URLs.
-- Cover the report's topics in order, and match its depth — a short report makes a short episode. Don't pad.`;
+- Cover the report's topics in order, and match its depth — a short report makes a short episode. Don't pad.
+- If the prompt lists the report's sections with indices, set each turn's "section" to the 0-based index of the section that turn covers. The opening welcome takes the first section's index; the closing sign-off takes the last.`;
 
 const PODCAST_SCHEMA = {
   type: "object",
@@ -34,6 +35,10 @@ const PODCAST_SCHEMA = {
         properties: {
           speaker: { type: "string", enum: ["host", "expert"] },
           text: { type: "string", description: "The spoken words for this turn" },
+          section: {
+            type: "integer",
+            description: "0-based index of the report section this turn covers",
+          },
         },
         required: ["speaker", "text"],
         additionalProperties: false,
@@ -48,7 +53,14 @@ interface PodcastScript {
   turns: DialogueTurn[];
 }
 
-export async function writeScript(markdown: string): Promise<DialogueTurn[]> {
+export async function writeScript(markdown: string, headings: string[] = []): Promise<DialogueTurn[]> {
+  const sectionList =
+    headings.length > 0
+      ? `\n\nReport sections (set each turn's "section" to the matching 0-based index):\n${headings
+          .map((h, i) => `${i}: ${h}`)
+          .join("\n")}`
+      : "";
+
   const message = await anthropic().messages.create({
     model: MODELS.podcastScript,
     max_tokens: 8000,
@@ -60,7 +72,7 @@ export async function writeScript(markdown: string): Promise<DialogueTurn[]> {
     messages: [
       {
         role: "user",
-        content: `Here is today's report. Write the two-person interview script.\n\n${markdown}`,
+        content: `Here is today's report. Write the two-person interview script.\n\n${markdown}${sectionList}`,
       },
     ],
   });
