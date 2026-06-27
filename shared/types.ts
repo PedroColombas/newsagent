@@ -46,7 +46,8 @@ export interface ReportSource {
 
 // A single topic section within a report
 export interface ReportSection {
-  topic: string;
+  topic: string;                  // editorial heading for the section
+  category: string | null;        // originating genre (null for custom interests / "For you")
   summary: string;
   sources: ReportSource[];        // sources with optional title + date
   level: 1 | 2 | 3;               // which topic level produced this section

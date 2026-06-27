@@ -6,6 +6,7 @@ import { AppShell } from "./components/AppShell";
 import { Onboarding } from "./pages/Onboarding";
 import { Login } from "./pages/Login";
 import { Today } from "./pages/Today";
+import { Report } from "./pages/Report";
 import { History } from "./pages/History";
 import { Preferences } from "./pages/Preferences";
 import { Profile } from "./pages/Profile";
@@ -35,6 +36,8 @@ function AuthedApp() {
 
   return (
     <Routes>
+      {/* Full-screen reading view — no bottom nav. */}
+      <Route path="report/:date" element={<Report />} />
       <Route element={<AppShell />}>
         <Route index element={<Today />} />
         <Route path="history" element={<History />} />

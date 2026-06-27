@@ -120,6 +120,7 @@ export async function synthesize(
       const t = topics[s.topic_index];
       return {
         topic: s.heading || t.topic,
+        category: t.genre,
         summary: s.summary,
         sources: t.sources,
         level: t.level,
