@@ -28,6 +28,15 @@ export function estimateReadMinutes(texts: string[]): number {
   return Math.max(1, Math.round(words / 200));
 }
 
+// Readable host for a source URL, e.g. "https://www.reuters.com/x" -> "reuters.com".
+export function sourceHost(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
 // A clean one-line preview of a section's write-up (strips light markdown, truncates).
 export function snippet(summary: string, max = 180): string {
   const text = summary
