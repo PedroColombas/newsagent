@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider";
 import { usePreferences } from "./hooks/usePreferences";
 import { AppShell } from "./components/AppShell";
+import { FullPlayer } from "./components/FullPlayer";
 import { Onboarding } from "./pages/Onboarding";
 import { Login } from "./pages/Login";
 import { Today } from "./pages/Today";
@@ -19,7 +20,12 @@ export function App() {
   if (loading) return <Splash />;
   // Logged out → sign in. Logged in → first-run gate, then the tabbed app.
   if (!session) return <Login />;
-  return <AuthedApp />;
+  return (
+    <>
+      <AuthedApp />
+      <FullPlayer />
+    </>
+  );
 }
 
 function AuthedApp() {

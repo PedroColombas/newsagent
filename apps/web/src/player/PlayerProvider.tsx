@@ -17,11 +17,14 @@ interface PlayerContextValue {
   duration: number;
   rate: number;
   loading: boolean;
+  expanded: boolean;
   play: (ep: PlayerEpisode) => Promise<void>;
   toggle: () => void;
   seek: (t: number) => void;
   skip: (delta: number) => void;
   setRate: (r: number) => void;
+  expand: () => void;
+  collapse: () => void;
 }
 
 const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
@@ -36,6 +39,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [rate, setRateState] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   async function play(ep: PlayerEpisode) {
     const audio = audioRef.current;
@@ -92,11 +96,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     duration,
     rate,
     loading,
+    expanded,
     play,
     toggle,
     seek,
     skip,
     setRate,
+    expand: () => setExpanded(true),
+    collapse: () => setExpanded(false),
   };
 
   return (
