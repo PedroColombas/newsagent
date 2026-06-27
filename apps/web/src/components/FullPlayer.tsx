@@ -23,6 +23,10 @@ export function FullPlayer() {
   useEffect(() => {
     if (!expanded) setShowSpeed(false);
   }, [expanded]);
+  // Press-hold-slide drag state for the speed pill. Must be declared with the other hooks,
+  // before the early return below — otherwise the hook count changes between collapsed and
+  // expanded renders and React crashes ("rendered more hooks than during the previous render").
+  const speedDrag = useRef<{ x: number; rate: number } | null>(null);
 
   if (!expanded || !episode) return null;
 
@@ -44,7 +48,6 @@ export function FullPlayer() {
   }
 
   // Press the pill, hold, and slide horizontally to set the rate (~220px = full 0.5–1.5 sweep).
-  const speedDrag = useRef<{ x: number; rate: number } | null>(null);
   function onSpeedPointerDown(e: PointerEvent<HTMLButtonElement>) {
     e.currentTarget.setPointerCapture(e.pointerId);
     speedDrag.current = { x: e.clientX, rate };
