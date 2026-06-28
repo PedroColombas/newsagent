@@ -1,18 +1,14 @@
 import { lazy, Suspense, useRef, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider";
 import { usePreferences } from "./hooks/usePreferences";
 import { AppShell } from "./components/AppShell";
 import { FullPlayer } from "./components/FullPlayer";
 import { Onboarding } from "./pages/Onboarding";
 import { Login } from "./pages/Login";
-import { Today } from "./pages/Today";
 
 // Lazy — the reading view pulls in react-markdown, which we don't want in the initial bundle.
 const Report = lazy(() => import("./pages/Report").then((m) => ({ default: m.Report })));
-import { History } from "./pages/History";
-import { Preferences } from "./pages/Preferences";
-import { Profile } from "./pages/Profile";
 
 export function App() {
   const { session, loading } = useAuth();
@@ -53,13 +49,8 @@ function AuthedApp() {
           </Suspense>
         }
       />
-      <Route element={<AppShell />}>
-        <Route index element={<Today />} />
-        <Route path="history" element={<History />} />
-        <Route path="preferences" element={<Preferences />} />
-        <Route path="profile" element={<Profile />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
+      {/* Everything else → the tabbed shell, which owns the animated tab routes. */}
+      <Route path="/*" element={<AppShell />} />
     </Routes>
   );
 }

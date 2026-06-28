@@ -1,34 +1,31 @@
-import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
+import { useRef, useState, type MouseEvent, type PointerEvent } from "react";
+import { AnimatePresence, motion, useDragControls } from "motion/react";
 import { usePlayer } from "../player/PlayerProvider";
+import type { PlayerEpisode } from "../player/PlayerProvider";
 import { formatTime } from "../lib/format-time";
 import { PlayIcon, PauseIcon } from "./ui/icons";
 
-// Full-screen player; renders only when expanded, overlaying everything.
+// Full-screen player. Slides up from the bottom when expanded; swipe down (or the chevron)
+// to dismiss. The sheet itself is the PlayerSheet child, mounted only while expanded so its
+// hooks/state reset cleanly on close.
 export function FullPlayer() {
-  const {
-    episode,
-    expanded,
-    isPlaying,
-    currentTime,
-    duration,
-    rate,
-    toggle,
-    seek,
-    skip,
-    setRate,
-    collapse,
-  } = usePlayer();
+  const { episode, expanded } = usePlayer();
+  return (
+    <AnimatePresence>
+      {expanded && episode ? <PlayerSheet episode={episode} /> : null}
+    </AnimatePresence>
+  );
+}
+
+function PlayerSheet({ episode }: { episode: PlayerEpisode }) {
+  const { isPlaying, currentTime, duration, rate, toggle, seek, skip, setRate, collapse } =
+    usePlayer();
 
   const [showSpeed, setShowSpeed] = useState(false);
-  useEffect(() => {
-    if (!expanded) setShowSpeed(false);
-  }, [expanded]);
-  // Press-hold-slide drag state for the speed pill. Must be declared with the other hooks,
-  // before the early return below — otherwise the hook count changes between collapsed and
-  // expanded renders and React crashes ("rendered more hooks than during the previous render").
   const speedDrag = useRef<{ x: number; rate: number } | null>(null);
-
-  if (!expanded || !episode) return null;
+  // Sheet drag is started only from the grab handle (dragListener=false), so it can't conflict
+  // with the scrubber's click or the speed pill's pointer-capture lower down.
+  const dragControls = useDragControls();
 
   const pct = duration ? Math.min(100, (currentTime / duration) * 100) : 0;
   const remaining = Math.max(0, duration - currentTime);
@@ -69,8 +66,30 @@ export function FullPlayer() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[var(--paper)] text-[var(--ink)]">
-      <div className="mx-auto flex h-full max-w-md flex-col px-6 pb-10 pt-5">
+    <motion.div
+      className="fixed inset-0 z-50 bg-[var(--paper)] text-[var(--ink)]"
+      initial={{ y: "100%" }}
+      animate={{ y: 0 }}
+      exit={{ y: "100%" }}
+      transition={{ type: "spring", damping: 34, stiffness: 330 }}
+      drag="y"
+      dragControls={dragControls}
+      dragListener={false}
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={{ top: 0, bottom: 0.9 }}
+      onDragEnd={(_, info) => {
+        if (info.offset.y > 120 || info.velocity.y > 600) collapse();
+      }}
+    >
+      <div className="mx-auto flex h-full max-w-md flex-col px-6 pb-10 pt-2">
+        {/* Grab handle — drag down to dismiss */}
+        <div
+          onPointerDown={(e) => dragControls.start(e)}
+          className="flex flex-none touch-none cursor-grab justify-center py-2 active:cursor-grabbing"
+        >
+          <span className="h-1 w-9 rounded-full bg-[var(--line)]" />
+        </div>
+
         {/* Top bar */}
         <div className="flex flex-none items-center justify-between">
           <button onClick={collapse} aria-label="Collapse player" className="flex h-9 w-9 items-center justify-center">
@@ -189,7 +208,7 @@ export function FullPlayer() {
 
         <div className="flex-1" />
       </div>
-    </div>
+    </motion.div>
   );
 }
 
