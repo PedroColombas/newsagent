@@ -15,9 +15,9 @@ export type Recency = 'day' | 'week' | 'month';
 // Level 2 subtopics, keyed by genre name
 export type SubtopicMap = Record<string, string[]>;
 
-// Per-genre recency overrides, keyed by genre name. Any genre not listed (and all
-// custom interests) falls back to Preferences.default_recency.
-export type RecencyOverrides = Record<string, Recency>;
+// How much background a topic gets the FIRST time it appears in a user's brief:
+// 'latest' = no primer, 'quick' = short primer, 'full' = thorough catch-up.
+export type ContextDepth = 'latest' | 'quick' | 'full';
 
 export interface Preferences {
   id: string;
@@ -29,8 +29,7 @@ export interface Preferences {
   report_mode: ReportMode;
   voice: Voice;
   max_topics: number;             // 1–10
-  default_recency: Recency;       // default news window for the whole report
-  recency_by_genre: RecencyOverrides; // optional per-genre overrides
+  context_depth: ContextDepth;    // catch-up depth for newly-followed topics
   podcast_enabled: boolean;
   delivery_hour: number;          // 0–23, UTC
   updated_at: string;
@@ -52,6 +51,7 @@ export interface ReportSection {
   sources: ReportSource[];        // sources with optional title + date
   level: 1 | 2 | 3;               // which topic level produced this section
   timeframe?: Recency;            // the recency window this section covers
+  isPrimer?: boolean;             // a first-time catch-up primer for this topic
 }
 
 export interface ReportContent {

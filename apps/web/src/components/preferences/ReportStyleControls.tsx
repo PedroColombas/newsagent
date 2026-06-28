@@ -1,7 +1,7 @@
 import type { Preferences } from "@shared/types";
 import { Segmented } from "../ui/Segmented";
 import { Chip } from "../ui/Chip";
-import { REPORT_MODES, VOICES, RECENCY_OPTIONS } from "../../lib/preferences-options";
+import { REPORT_MODES, VOICES, CONTEXT_DEPTH_OPTIONS } from "../../lib/preferences-options";
 
 export function ReportStyleControls({
   prefs,
@@ -42,15 +42,14 @@ export function ReportStyleControls({
       </div>
 
       <div className="flex flex-col gap-2">
-        <span className="px-1 text-[13.5px] font-semibold">Recency</span>
+        <span className="px-1 text-[13.5px] font-semibold">New topics</span>
         <Segmented
-          options={RECENCY_OPTIONS}
-          value={prefs.default_recency}
-          onChange={(default_recency) => update({ default_recency })}
+          options={CONTEXT_DEPTH_OPTIONS}
+          value={prefs.context_depth}
+          onChange={(context_depth) => update({ context_depth })}
         />
         <span className="px-1 text-[12px] text-[var(--faint)]">
-          How far back each report looks.{" "}
-          {RECENCY_OPTIONS.find((r) => r.value === prefs.default_recency)?.hint}.
+          {CONTEXT_DEPTH_OPTIONS.find((c) => c.value === prefs.context_depth)?.hint}
         </span>
       </div>
 

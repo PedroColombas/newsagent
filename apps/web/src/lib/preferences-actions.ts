@@ -9,9 +9,7 @@ export function toggleGenre(prefs: Preferences, update: Update, genre: string) {
   if (prefs.genres.includes(genre)) {
     const subtopics = { ...prefs.subtopics };
     delete subtopics[genre];
-    const recency_by_genre = { ...prefs.recency_by_genre };
-    delete recency_by_genre[genre];
-    update({ genres: prefs.genres.filter((g) => g !== genre), subtopics, recency_by_genre });
+    update({ genres: prefs.genres.filter((g) => g !== genre), subtopics });
   } else if (prefs.genres.length < MAX_GENRES) {
     update({ genres: [...prefs.genres, genre] });
   }

@@ -14,8 +14,7 @@ const EDITABLE_COLUMNS = [
   "report_mode",
   "voice",
   "max_topics",
-  "default_recency",
-  "recency_by_genre",
+  "context_depth",
   "podcast_enabled",
   "delivery_hour",
 ] as const;

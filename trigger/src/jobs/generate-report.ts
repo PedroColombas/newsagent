@@ -55,6 +55,17 @@ export const generateReport = task({
         .from("reports")
         .update({ content, markdown, status: "complete" })
         .eq("id", reportId);
+
+      // Record these topics as briefed, so future reports skip the catch-up primer.
+      if (topics.length > 0) {
+        await db
+          .from("user_topic_history")
+          .upsert(
+            topics.map((t) => ({ user_id: userId, topic_key: t.topicKey })),
+            { onConflict: "user_id,topic_key", ignoreDuplicates: true },
+          );
+      }
+
       logger.info("report complete", {
         userId,
         date,

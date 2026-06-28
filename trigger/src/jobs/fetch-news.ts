@@ -4,7 +4,7 @@ import { anthropic, MODELS, firstText } from "../lib/anthropic";
 import { perplexitySearch } from "../lib/perplexity";
 import { withDiagnostics } from "../lib/diagnostics";
 import { generateReport } from "./generate-report";
-import { planReportSections } from "../../../shared/plan-topics";
+import { planReportSections, type PlannedTopic } from "../../../shared/plan-topics";
 import type { Preferences, Recency, ReportSource } from "@shared/types";
 
 // A topic resolved to a single editorial-brief Perplexity query (one query per topic).
@@ -14,6 +14,8 @@ export interface TopicQuery {
   genre: string | null; // originating genre (L1 = itself, L2 = parent, L3 = none)
   recency: Recency; // resolved news window for this topic
   query: string; // the editorial-brief user prompt
+  topicKey: string; // stable key for new-topic detection (user_topic_history)
+  isPrimer: boolean; // first-time catch-up primer for this user
 }
 
 export interface FetchedTopic extends TopicQuery {
@@ -35,11 +37,19 @@ export const fetchNews = task({
     if (error) throw error;
     const prefs = data as Preferences;
 
-    const topics = await buildTopicQueries(prefs);
+    // Topics this user has already been briefed on — a topic only gets a catch-up primer
+    // the first time it appears.
+    const { data: history } = await supabase()
+      .from("user_topic_history")
+      .select("topic_key")
+      .eq("user_id", userId);
+    const briefed = new Set((history ?? []).map((h) => h.topic_key as string));
+
+    const topics = await buildTopicQueries(prefs, briefed);
     logger.info("resolved topic queries", {
       userId,
       count: topics.length,
-      windows: topics.map((t) => `${t.topic}:${t.recency}`),
+      windows: topics.map((t) => `${t.topic}:${t.recency}${t.isPrimer ? ":primer" : ""}`),
     });
 
     // One Perplexity query per topic. Sequential keeps us under rate limits; revisit with
@@ -47,7 +57,11 @@ export const fetchNews = task({
     const fetched: FetchedTopic[] = [];
     for (const t of topics) {
       const result = await withDiagnostics(`perplexity:${t.topic}`, () =>
-        perplexitySearch(t.query, { recency: t.recency, system: SYSTEM_PROMPT }),
+        perplexitySearch(t.query, {
+          recency: t.recency,
+          system: SYSTEM_PROMPT,
+          contextSize: t.isPrimer ? "high" : "medium",
+        }),
       );
       fetched.push({ ...t, content: result.content, sources: result.sources });
     }
@@ -66,7 +80,8 @@ export const fetchNews = task({
 //     why it matters), one shared template across all three topic levels.
 //   • Topic resolution: genres/subtopics are deterministic; free-text custom
 //     interests get a cheap Claude call to extract a clean topic label.
-//   • Recency: a per-genre override falls back to the user's default window.
+//   • Window: latest (24h) per topic; a topic NEW to the user gets a one-time catch-up
+//     primer (wider "month" window + background query) unless context_depth is "latest".
 //   • Overflow past max_topics is prioritised by specificity (custom > subtopic >
 //     genre). That last rule is the easiest knob to retune.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -92,27 +107,49 @@ function editorialQuery(topic: string, recency: Recency): string {
   );
 }
 
-function recencyForGenre(prefs: Preferences, genre: string | null): Recency {
-  if (genre && prefs.recency_by_genre?.[genre]) return prefs.recency_by_genre[genre];
-  return prefs.default_recency;
+const DAILY_WINDOW: Recency = "day"; // latest news for an already-followed topic
+const PRIMER_WINDOW: Recency = "month"; // wider window for a first-time catch-up primer
+
+// A first-time catch-up: background + state of the field, not just today's headlines.
+function primerQuery(topic: string): string {
+  return (
+    `Provide background to bring a reader up to speed on ${topic}: the current state of the ` +
+    `field, the key players and context, and the most important recent developments and ongoing ` +
+    `storylines. Focus on what someone newly following ${topic} needs to understand — not just ` +
+    `the last day's headlines.`
+  );
 }
 
-async function buildTopicQueries(prefs: Preferences): Promise<TopicQuery[]> {
+// Stable identifier per topic for new-topic detection (independent of the resolved L3 label).
+function topicKey(p: PlannedTopic): string {
+  if (p.level === 3) return `interest:${p.topic}`;
+  if (p.level === 2) return `sub:${p.genre}:${p.topic}`;
+  return `genre:${p.topic}`;
+}
+
+async function buildTopicQueries(prefs: Preferences, briefed: Set<string>): Promise<TopicQuery[]> {
   // Which sections (and their order + cap) is shared with the app's edition preview via
   // planReportSections, so the two never drift. Here we resolve each into a query.
   const out: TopicQuery[] = [];
   for (const planned of planReportSections(prefs)) {
+    const key = topicKey(planned);
+    // A topic new to this user gets a one-time catch-up primer (unless they chose "latest").
+    const isPrimer = prefs.context_depth !== "latest" && !briefed.has(key);
+
     // L3 custom interests: sharpen the raw text into a clean search label (only for topics
     // that survived the cap, so we don't waste calls on overflow).
     const topic =
       planned.level === 3 ? await resolveInterestTopic(planned.topic) : planned.topic;
-    const recency = recencyForGenre(prefs, planned.genre);
+    const recency = isPrimer ? PRIMER_WINDOW : DAILY_WINDOW;
+
     out.push({
       topic,
       level: planned.level,
       genre: planned.genre,
       recency,
-      query: editorialQuery(topic, recency),
+      query: isPrimer ? primerQuery(topic) : editorialQuery(topic, recency),
+      topicKey: key,
+      isPrimer,
     });
   }
   return out;

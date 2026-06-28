@@ -105,6 +105,11 @@ export function Today() {
               <span className="text-[11.5px] font-semibold uppercase tracking-[1.4px] text-[var(--muted)]">
                 {s.category ?? "For you"}
               </span>
+              {s.isPrimer && (
+                <span className="rounded-full bg-[var(--accent)]/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--accent)]">
+                  Catch-up
+                </span>
+              )}
             </div>
             <h2 className="text-[20px] font-semibold leading-snug tracking-tight">{s.topic}</h2>
             <p className="text-[15px] leading-relaxed text-[var(--ink)]/85">{snippet(s.summary)}</p>

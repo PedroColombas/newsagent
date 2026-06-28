@@ -37,6 +37,8 @@ RULES:
 - If a topic's research is thin or empty, say so in one sentence rather than padding.
 - Apply exclusions as a hard filter: omit anything matching, even if present in the research.
 
+CATCH-UP PRIMERS: Topics marked "primer": true are ones the reader is following for the FIRST time. For those sections, orient a newcomer — set up the current state of the field and why it matters, give the essential background, then the key recent developments, rather than just today's headline. Keep the selected mode and voice, though a primer section may run a little longer than a normal one. Use the given catch-up depth: "quick" = the essentials in a tight paragraph or two; "full" = a thorough but readable get-up-to-speed briefing. Sections not marked primer stay focused on the latest developments.
+
 OUTPUT: Return JSON matching the schema. "sections" has one entry per topic you include — each with "topic_index" (the index of the topic in the input array it is based on), a "heading", and a "summary" written in the selected mode and voice. "markdown" is the full rendered report: headings, prose, and the per-section source lists.`;
 
 const SYNTHESIS_SCHEMA = {
@@ -84,6 +86,7 @@ export async function synthesize(
     index,
     topic: t.topic,
     recency: t.recency,
+    primer: t.isPrimer,
     content: t.content,
     sources: t.sources,
   }));
@@ -91,8 +94,9 @@ export async function synthesize(
   const userMessage =
     `Report mode: ${prefs.report_mode}\n` +
     `Voice: ${prefs.voice}\n` +
+    `Catch-up depth (for primer topics): ${prefs.context_depth}\n` +
     `Exclusions: ${prefs.exclusions || "none"}\n\n` +
-    `Topics (JSON array; use each item's "index" as topic_index):\n` +
+    `Topics (JSON array; use each item's "index" as topic_index). Items with "primer": true are new to the reader — write those as a catch-up:\n` +
     `${JSON.stringify(topicsForModel)}\n\n` +
     "Write the report now.";
 
@@ -125,6 +129,7 @@ export async function synthesize(
         sources: t.sources,
         level: t.level,
         timeframe: t.recency,
+        isPrimer: t.isPrimer,
       };
     });
 

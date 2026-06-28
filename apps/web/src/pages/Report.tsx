@@ -164,6 +164,11 @@ function Section({
         <span className="text-[11.5px] font-semibold uppercase tracking-[1.4px] text-[var(--muted)]">
           {section.category ?? "For you"}
         </span>
+        {section.isPrimer && (
+          <span className="rounded-full bg-[var(--accent)]/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--accent)]">
+            Catch-up
+          </span>
+        )}
       </div>
       <h2 className="mt-2 text-[22px] font-bold leading-tight tracking-tight">{section.topic}</h2>
 

@@ -1,4 +1,4 @@
-import type { ReportMode, Voice, Recency } from "@shared/types";
+import type { ReportMode, Voice, ContextDepth } from "@shared/types";
 
 // App-enforced limits (the DB is permissive; these shape the UI).
 export const MAX_GENRES = 5;
@@ -33,10 +33,11 @@ export const VOICES: { value: Voice; label: string; hint: string }[] = [
   { value: "critical", label: "Critical", hint: "Questions the claims" },
 ];
 
-export const RECENCY_OPTIONS: { value: Recency; label: string; hint: string }[] = [
-  { value: "day", label: "24 hours", hint: "Today's update" },
-  { value: "week", label: "Past week", hint: "Weekly roundup" },
-  { value: "month", label: "Past month", hint: "The bigger picture" },
+// Catch-up depth for a newly-followed topic's first appearance.
+export const CONTEXT_DEPTH_OPTIONS: { value: ContextDepth; label: string; hint: string }[] = [
+  { value: "full", label: "Full", hint: "A thorough catch-up the first time a topic appears" },
+  { value: "quick", label: "Quick", hint: "A short primer the first time a topic appears" },
+  { value: "latest", label: "Latest", hint: "No catch-up — just what's new" },
 ];
 
 // Static fallback used when the dynamic suggestion endpoint is unavailable
