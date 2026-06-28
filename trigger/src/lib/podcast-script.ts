@@ -23,7 +23,8 @@ Rules:
 - Ground every claim in the report. Don't invent facts. Attribute to outlets by name, and when a source first comes up, briefly work in what it is and how trustworthy it is, spoken naturally — e.g. "...and that's from Nature, the peer-reviewed journal, so it's well-grounded", or "the Financial Times reported...". Only vouch for outlets you genuinely recognise; if a source is unfamiliar or looks low-quality, say so plainly rather than implying authority.
 - Write for the ear: say dates and numbers naturally, expand symbols, and NEVER read out URLs.
 - Cover the report's topics in order, and match its depth — a short report makes a short episode. Don't pad.
-- If the prompt lists the report's sections with indices, set each turn's "section" to the 0-based index of the section that turn covers. The opening welcome takes the first section's index; the closing sign-off takes the last.`;
+- If the prompt lists the report's sections with indices, set each turn's "section" to the 0-based index of the section that turn covers. The opening welcome takes the first section's index; the closing sign-off takes the last.
+- Sections marked [catch-up] are NEW to the listener. Open those by briefly framing it as a get-up-to-speed — the host flags that it's a new area ("this one's new for you, so let's set the scene") and the expert lays out the essential background before moving to the latest. Keep it natural and short; don't belabour it.`;
 
 const PODCAST_SCHEMA = {
   type: "object",
@@ -53,11 +54,14 @@ interface PodcastScript {
   turns: DialogueTurn[];
 }
 
-export async function writeScript(markdown: string, headings: string[] = []): Promise<DialogueTurn[]> {
+export async function writeScript(
+  markdown: string,
+  sections: { heading: string; isPrimer: boolean }[] = [],
+): Promise<DialogueTurn[]> {
   const sectionList =
-    headings.length > 0
-      ? `\n\nReport sections (set each turn's "section" to the matching 0-based index):\n${headings
-          .map((h, i) => `${i}: ${h}`)
+    sections.length > 0
+      ? `\n\nReport sections (set each turn's "section" to the matching 0-based index; [catch-up] = the listener is new to this topic):\n${sections
+          .map((s, i) => `${i}: ${s.heading}${s.isPrimer ? " [catch-up]" : ""}`)
           .join("\n")}`
       : "";
 

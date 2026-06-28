@@ -68,8 +68,12 @@ export const generatePodcast = task({
 
       // 1. Write a two-person interview script (host asks, expert answers) as structured turns,
       //    each tagged with the report section it covers (for chapters).
-      const headings = sections.map((s) => s.topic);
-      const turns = await withDiagnostics("podcast-script", () => writeScript(markdown, headings));
+      const turns = await withDiagnostics("podcast-script", () =>
+        writeScript(
+          markdown,
+          sections.map((s) => ({ heading: s.topic, isPrimer: Boolean(s.isPrimer) })),
+        ),
+      );
       if (turns.length === 0) throw new Error("podcast script came back empty");
       const script = renderTranscript(turns);
       const chapters = computeChapters(turns, sections);

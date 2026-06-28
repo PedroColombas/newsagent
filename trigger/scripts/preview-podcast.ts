@@ -36,7 +36,12 @@ async function main(): Promise<void> {
   }
 
   console.log("\n=== Podcast interview preview (script only — no audio) ===\n");
-  const turns = await writeScript(SAMPLE_REPORT);
+  // Mark the first topic as a catch-up so the preview shows the primer framing.
+  const turns = await writeScript(SAMPLE_REPORT, [
+    { heading: "AI accelerator export rules", isPrimer: true },
+    { heading: "Fusion energy milestone", isPrimer: false },
+    { heading: "Open-weights model release", isPrimer: false },
+  ]);
 
   for (const turn of turns) {
     const label = turn.speaker === "host" ? "HOST" : "EXPERT";
