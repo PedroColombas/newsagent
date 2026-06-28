@@ -17,7 +17,9 @@ export async function writeRecap(
     `(newest first), with their dates. Condense them into a brief catch-up of what mattered most ` +
     `across that gap — lead with the biggest developments, group by theme rather than replaying it ` +
     `day by day, and note where a story moved over several days. Keep it tight: a short paragraph ` +
-    `or two. Write in a ${voice} tone. Don't cover today's news — that follows right below this recap.`;
+    `or two. Write in a ${voice} tone. Don't cover today's news — that follows right below this recap. ` +
+    `Do not begin with a title, heading, or date line — the app already shows a heading; start directly ` +
+    `with the recap, in plain prose (no markdown headings or bold).`;
 
   const userMessage = usable.map((m) => `Brief — ${m.date}\n\n${m.markdown}`).join("\n\n———\n\n");
 
@@ -28,5 +30,9 @@ export async function writeRecap(
     messages: [{ role: "user", content: userMessage }],
   });
 
-  return firstText(message.content).trim();
+  // Defensive: drop a leading title/heading line the model may still add (the card has its own).
+  return firstText(message.content)
+    .trim()
+    .replace(/^\s*(#{1,6}\s+[^\n]*|[^\n]*while you were away[^\n]*)\n+/i, "")
+    .trim();
 }
