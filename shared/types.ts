@@ -54,8 +54,15 @@ export interface ReportSection {
   isPrimer?: boolean;             // a first-time catch-up primer for this topic
 }
 
+// "While you were away" recap of briefs missed since the user last read one.
+export interface ReportRecap {
+  summary: string; // short catch-up across the missed period
+  days: number;    // number of missed briefs covered
+}
+
 export interface ReportContent {
   sections: ReportSection[];
+  recap?: ReportRecap | null;
 }
 
 export interface Report {

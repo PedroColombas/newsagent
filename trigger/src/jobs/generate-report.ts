@@ -2,8 +2,9 @@ import { task, logger } from "@trigger.dev/sdk";
 import { supabase } from "../lib/supabase";
 import { withDiagnostics } from "../lib/diagnostics";
 import { synthesize } from "../lib/synthesis";
+import { writeRecap } from "../lib/recap";
 import { generatePodcast } from "./generate-podcast";
-import type { Preferences } from "@shared/types";
+import type { Preferences, ReportContent, ReportRecap } from "@shared/types";
 import type { FetchedTopic } from "./fetch-news";
 
 export const generateReport = task({
@@ -51,9 +52,43 @@ export const generateReport = task({
         synthesize(prefs, topics),
       );
 
+      // "While you were away" recap from briefs missed since the user last read one.
+      const { data: readRows } = await db
+        .from("report_reads")
+        .select("report_id")
+        .eq("user_id", userId);
+      const readIds = new Set((readRows ?? []).map((r) => r.report_id as string));
+      let recap: ReportRecap | null = null;
+      if (readIds.size > 0) {
+        const { data: priorRows } = await db
+          .from("reports")
+          .select("id, date, markdown")
+          .eq("user_id", userId)
+          .eq("status", "complete")
+          .lt("date", date)
+          .order("date", { ascending: false });
+        const prior = (priorRows ?? []) as { id: string; date: string; markdown: string | null }[];
+        const lastReadDate = prior
+          .filter((r) => readIds.has(r.id))
+          .map((r) => r.date)
+          .sort()
+          .at(-1);
+        const missed = lastReadDate ? prior.filter((r) => r.date > lastReadDate) : [];
+        if (missed.length > 0) {
+          const summary = await withDiagnostics("recap", () =>
+            writeRecap(
+              missed.map((m) => ({ date: m.date, markdown: m.markdown ?? "" })),
+              prefs.voice,
+            ),
+          );
+          if (summary) recap = { summary, days: missed.length };
+        }
+      }
+      const finalContent: ReportContent = { ...content, recap };
+
       await db
         .from("reports")
-        .update({ content, markdown, status: "complete" })
+        .update({ content: finalContent, markdown, status: "complete" })
         .eq("id", reportId);
 
       // Record these topics as briefed, so future reports skip the catch-up primer.

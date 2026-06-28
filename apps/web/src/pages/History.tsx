@@ -169,7 +169,9 @@ function ReportRow({ report, onOpen }: { report: ReportSummary; onOpen: () => vo
   return (
     <button
       onClick={onOpen}
-      className="flex items-center gap-3 rounded-2xl border border-[var(--line)] border-l-[3px] border-l-[var(--accent)] bg-[var(--surface)] p-3 text-left transition-opacity active:opacity-60"
+      className={`flex items-center gap-3 rounded-2xl border border-[var(--line)] border-l-[3px] bg-[var(--surface)] p-3 text-left transition-opacity active:opacity-60 ${
+        report.read ? "border-l-[var(--line)] opacity-70" : "border-l-[var(--accent)]"
+      }`}
     >
       <div className="flex w-11 flex-none flex-col items-center">
         <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--faint)]">
@@ -185,6 +187,7 @@ function ReportRow({ report, onOpen }: { report: ReportSummary; onOpen: () => vo
           <span className="text-[13.5px] font-bold">
             {report.topicCount} {report.topicCount === 1 ? "topic" : "topics"}
           </span>
+          {report.read && <span className="text-[11px] text-[var(--faint)]">· Read</span>}
         </div>
         {report.categories.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">

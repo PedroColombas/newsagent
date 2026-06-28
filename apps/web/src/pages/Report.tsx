@@ -3,9 +3,12 @@ import type { ReactNode } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
-import type { ReportSection, ReportSource } from "@shared/types";
+import type { ReportSection, ReportSource, ReportRecap } from "@shared/types";
 import { useReport } from "../hooks/useReport";
+import { useAuth } from "../auth/AuthProvider";
+import { markReportRead } from "../lib/reads";
 import { formatReportDate, sourceHost } from "../lib/report-format";
+import { RecapCard } from "../components/RecapCard";
 
 // Body text sizes (S / M / L), cycled by the "Aa" control and remembered.
 const TEXT_SIZES = ["text-[15px]", "text-[16.5px]", "text-[18px]"];
@@ -30,7 +33,13 @@ const markdownComponents: Components = {
 export function Report() {
   const { date } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { report, loading } = useReport(date);
+
+  // Opening the reading view marks the report read.
+  useEffect(() => {
+    if (user && report?.status === "complete") void markReportRead(user.id, report.id);
+  }, [user, report?.id, report?.status]);
 
   const [sizeIdx, setSizeIdx] = useState(() => {
     const v = Number(localStorage.getItem("reader-size"));
@@ -101,6 +110,7 @@ export function Report() {
         <Article
           date={report.date}
           sections={report.content.sections}
+          recap={report.content.recap}
           bodySize={TEXT_SIZES[sizeIdx]}
         />
       )}
@@ -111,10 +121,12 @@ export function Report() {
 function Article({
   date,
   sections,
+  recap,
   bodySize,
 }: {
   date: string;
   sections: ReportSection[];
+  recap?: ReportRecap | null;
   bodySize: string;
 }) {
   // Scroll to the section the user tapped on Today (e.g. /report/2026-06-27#s2).
@@ -134,6 +146,12 @@ function Article({
       <span className="mt-1.5 block text-[13px] text-[var(--muted)]">
         {sections.length} {sections.length === 1 ? "topic" : "topics"}
       </span>
+
+      {recap && (
+        <div className="mt-4">
+          <RecapCard recap={recap} />
+        </div>
+      )}
 
       <div className="mt-4 flex flex-col gap-7">
         {sections.map((s, i) => (

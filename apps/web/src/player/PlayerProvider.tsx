@@ -1,6 +1,8 @@
 import { createContext, useContext, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { PodcastChapter } from "@shared/types";
+import { useAuth } from "../auth/AuthProvider";
+import { markReportRead } from "../lib/reads";
 import { supabase } from "../lib/supabase";
 
 export interface PlayerEpisode {
@@ -34,6 +36,7 @@ const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
 // One audio element for the whole app, mounted above the routes so playback survives
 // navigation. Private-bucket audio is played via a short-lived signed URL.
 export function PlayerProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [episode, setEpisode] = useState<PlayerEpisode | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -63,6 +66,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     setEpisode(ep);
     setCurrentTime(0);
     setDuration(ep.durationSeconds ?? 0);
+    if (user) void markReportRead(user.id, ep.reportId);
     audio.src = data.signedUrl;
     audio.playbackRate = rate;
     void audio.play().catch(() => {});

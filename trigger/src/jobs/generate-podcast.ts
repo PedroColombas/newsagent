@@ -39,7 +39,9 @@ export const generatePodcast = task({
     if (reportError) throw reportError;
     const userId = report!.user_id as string;
     const markdown = report!.markdown as string | null;
-    const sections = (report!.content as ReportContent | null)?.sections ?? [];
+    const content = report!.content as ReportContent | null;
+    const sections = content?.sections ?? [];
+    const recap = content?.recap?.summary;
 
     // Idempotency anchor: podcast_episodes.unique(report_id).
     const { data: existing } = await db
@@ -72,6 +74,7 @@ export const generatePodcast = task({
         writeScript(
           markdown,
           sections.map((s) => ({ heading: s.topic, isPrimer: Boolean(s.isPrimer) })),
+          recap,
         ),
       );
       if (turns.length === 0) throw new Error("podcast script came back empty");

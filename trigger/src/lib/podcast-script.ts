@@ -24,7 +24,8 @@ Rules:
 - Write for the ear: say dates and numbers naturally, expand symbols, and NEVER read out URLs.
 - Cover the report's topics in order, and match its depth — a short report makes a short episode. Don't pad.
 - If the prompt lists the report's sections with indices, set each turn's "section" to the 0-based index of the section that turn covers. The opening welcome takes the first section's index; the closing sign-off takes the last.
-- Sections marked [catch-up] are NEW to the listener. Open those by briefly framing it as a get-up-to-speed — the host flags that it's a new area ("this one's new for you, so let's set the scene") and the expert lays out the essential background before moving to the latest. Keep it natural and short; don't belabour it.`;
+- Sections marked [catch-up] are NEW to the listener. Open those by briefly framing it as a get-up-to-speed — the host flags that it's a new area ("this one's new for you, so let's set the scene") and the expert lays out the essential background before moving to the latest. Keep it natural and short; don't belabour it.
+- If a "while you were away" recap is provided, the host opens the episode (right after welcoming the listener) with a brief "here's what you've missed since last time" segment built from it, then moves into today's topics. Keep it short.`;
 
 const PODCAST_SCHEMA = {
   type: "object",
@@ -57,6 +58,7 @@ interface PodcastScript {
 export async function writeScript(
   markdown: string,
   sections: { heading: string; isPrimer: boolean }[] = [],
+  recap?: string,
 ): Promise<DialogueTurn[]> {
   const sectionList =
     sections.length > 0
@@ -64,6 +66,10 @@ export async function writeScript(
           .map((s, i) => `${i}: ${s.heading}${s.isPrimer ? " [catch-up]" : ""}`)
           .join("\n")}`
       : "";
+
+  const recapBlock = recap
+    ? `\n\n"While you were away" recap (the listener missed recent briefs — open with a short "here's what you've missed since last time" segment from this, then today's topics):\n${recap}`
+    : "";
 
   const message = await anthropic().messages.create({
     model: MODELS.podcastScript,
@@ -76,7 +82,7 @@ export async function writeScript(
     messages: [
       {
         role: "user",
-        content: `Here is today's report. Write the two-person interview script.\n\n${markdown}${sectionList}`,
+        content: `Here is today's report. Write the two-person interview script.\n\n${markdown}${sectionList}${recapBlock}`,
       },
     ],
   });

@@ -11,6 +11,7 @@ export interface ReportSummary {
   topicCount: number;
   categories: string[];
   hasPodcast: boolean;
+  read: boolean;
 }
 
 export function useReports() {
@@ -36,9 +37,15 @@ export function useReports() {
         .select("report_id")
         .eq("user_id", user.id);
 
+      const { data: reads } = await supabase
+        .from("report_reads")
+        .select("report_id")
+        .eq("user_id", user.id);
+
       if (!active) return;
 
       const podcastIds = new Set((eps ?? []).map((e: { report_id: string }) => e.report_id));
+      const readIds = new Set((reads ?? []).map((r: { report_id: string }) => r.report_id));
 
       const summaries: ReportSummary[] = (rows ?? []).map(
         (r: { id: string; date: string; status: ReportStatus; content: ReportContent | null }) => {
@@ -53,6 +60,7 @@ export function useReports() {
             topicCount: sections.length,
             categories,
             hasPodcast: podcastIds.has(r.id),
+            read: readIds.has(r.id),
           };
         },
       );

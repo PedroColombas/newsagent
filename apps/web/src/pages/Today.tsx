@@ -13,6 +13,7 @@ import {
 import { usePlayer } from "../player/PlayerProvider";
 import type { PlayerEpisode } from "../player/PlayerProvider";
 import { PlayIcon } from "../components/ui/icons";
+import { RecapCard } from "../components/RecapCard";
 
 export function Today() {
   const { user } = useAuth();
@@ -67,6 +68,12 @@ export function Today() {
       <span className="mt-2 block text-[13.5px] text-[var(--muted)]">
         Your brief · {sections.length} {sections.length === 1 ? "topic" : "topics"} · {minutes} min read
       </span>
+
+      {report.content.recap && (
+        <div className="mt-5">
+          <RecapCard recap={report.content.recap} />
+        </div>
+      )}
 
       {playable && (
         <button
