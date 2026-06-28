@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, type Location } from "react-router-dom";
 import { AnimatePresence, motion, type Variants } from "motion/react";
 import { BottomNav } from "./BottomNav";
 import { MiniPlayer } from "./MiniPlayer";
@@ -22,8 +22,9 @@ const slide: Variants = {
 };
 
 // Mobile-first single-column shell: a sliding tab pane + a fixed bottom nav in the thumb zone.
-export function AppShell() {
-  const location = useLocation();
+// Takes its location as a prop (not useLocation) so it can stay mounted as the base layer
+// while a report slides over it — rendering the last tab, never the report path.
+export function AppShell({ location }: { location: Location }) {
   const idx = tabIndex(location.pathname);
 
   // Previous tab index, updated AFTER commit (not during render) so it's StrictMode-safe.

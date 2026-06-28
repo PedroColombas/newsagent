@@ -1,5 +1,6 @@
 import { lazy, Suspense, useRef, useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation, type Location } from "react-router-dom";
+import { AnimatePresence, motion } from "motion/react";
 import { useAuth } from "./auth/AuthProvider";
 import { usePreferences } from "./hooks/usePreferences";
 import { AppShell } from "./components/AppShell";
@@ -38,20 +39,44 @@ function AuthedApp() {
     return <Onboarding prefs={prefs} update={update} onDone={() => setFinishedOnboarding(true)} />;
   }
 
+  return <AuthedRoutes />;
+}
+
+const HOME_LOCATION = { pathname: "/", search: "", hash: "", state: null, key: "default" } as Location;
+
+// The tabbed shell is the base layer — always mounted at the last tab location, so it never
+// redirects while a report is open. The reading view slides in over it from the right (iOS
+// push) and back out to the right on return.
+function AuthedRoutes() {
+  const location = useLocation();
+  const onReport = location.pathname.startsWith("/report/");
+  // Keep the last tab location for the base shell. On a direct /report load, fall back to home.
+  const lastTab = useRef<Location>(onReport ? HOME_LOCATION : location);
+  if (!onReport) lastTab.current = location;
+
   return (
-    <Routes>
-      {/* Full-screen reading view — no bottom nav. Lazy-loaded (react-markdown). */}
-      <Route
-        path="report/:date"
-        element={
-          <Suspense fallback={<Splash />}>
-            <Report />
-          </Suspense>
-        }
-      />
-      {/* Everything else → the tabbed shell, which owns the animated tab routes. */}
-      <Route path="/*" element={<AppShell />} />
-    </Routes>
+    <div className="relative h-full overflow-hidden">
+      <AppShell location={lastTab.current} />
+      <AnimatePresence>
+        {onReport && (
+          <motion.div
+            key="report"
+            className="absolute inset-0 z-30 bg-[var(--paper)]"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+          >
+            <Suspense fallback={<Splash />}>
+              {/* Full-screen reading view — no bottom nav. Lazy-loaded (react-markdown). */}
+              <Routes location={location}>
+                <Route path="report/:date" element={<Report />} />
+              </Routes>
+            </Suspense>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
