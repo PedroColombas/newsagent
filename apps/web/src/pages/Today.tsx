@@ -38,17 +38,24 @@ export function Today() {
   const waiting =
     generating || report?.status === "pending" || report?.status === "generating";
 
+  // The podcast is generated after the report completes, so the audio lags the brief. Show a
+  // loading state (and keep polling) while it's on its way.
+  const podcastPending =
+    !!prefs?.podcast_enabled &&
+    report?.status === "complete" &&
+    (!episode || episode.status === "pending" || episode.status === "generating");
+
   // Drop the optimistic flag once the brief actually completes.
   useEffect(() => {
     if (report?.status === "complete") setGenerating(false);
   }, [report?.status]);
 
-  // Poll while a brief is compiling (the gap before the row exists, then until it's done).
+  // Poll while a brief is compiling, or while its podcast is still being generated.
   useEffect(() => {
-    if (!waiting) return;
+    if (!waiting && !podcastPending) return;
     const t = setInterval(() => void refetch(), 4000);
     return () => clearInterval(t);
-  }, [waiting, refetch]);
+  }, [waiting, podcastPending, refetch]);
 
   // Safety net: if a generation never lands, stop waiting and surface an error.
   useEffect(() => {
@@ -145,7 +152,7 @@ export function Today() {
         </div>
       )}
 
-      {playable && (
+      {playable ? (
         <button
           onClick={() => void play(playable)}
           className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3 text-left"
@@ -168,7 +175,25 @@ export function Today() {
             ))}
           </span>
         </button>
-      )}
+      ) : podcastPending ? (
+        <div className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3">
+          <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[var(--accent)]/12">
+            <span className="flex h-4 items-end gap-[2px]">
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="h-full w-[2px] origin-bottom rounded-full bg-[var(--accent)]"
+                  style={{ animation: `equalize 0.9s ease-in-out ${i * 0.15}s infinite` }}
+                />
+              ))}
+            </span>
+          </span>
+          <span className="flex flex-1 flex-col">
+            <span className="text-[15px] font-semibold">Preparing your podcast…</span>
+            <span className="text-[12.5px] text-[var(--muted)]">The audio version is on its way</span>
+          </span>
+        </div>
+      ) : null}
 
       <div className="mt-5 flex flex-col">
         {sections.map((s, i) => (
