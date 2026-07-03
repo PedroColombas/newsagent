@@ -37,11 +37,12 @@ const STEPS: Step[] = [
   },
 ];
 
-const PAD = 8; // spotlight padding around the target
+const PAD = 4; // spotlight padding around the target — kept tight so the ring hugs the element
 
 export function Walkthrough({ onFinish }: { onFinish: () => void }) {
   const [i, setI] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const [radius, setRadius] = useState(16);
   const step = STEPS[i];
 
   // Measure the current target after layout, and on resize.
@@ -52,7 +53,11 @@ export function Walkthrough({ onFinish }: { onFinish: () => void }) {
     }
     const measure = () => {
       const el = document.querySelector(step.target as string);
-      if (el) el.scrollIntoView({ block: "nearest" });
+      if (el) {
+        el.scrollIntoView({ block: "nearest" });
+        // Match the element's own corner radius so the ring hugs it exactly (no square overshoot).
+        setRadius((parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0) + PAD);
+      }
       setRect(el ? el.getBoundingClientRect() : null);
     };
     measure();
@@ -80,12 +85,13 @@ export function Walkthrough({ onFinish }: { onFinish: () => void }) {
     <div className="fixed inset-0 z-[70]">
       {spot ? (
         <div
-          className="pointer-events-none absolute rounded-2xl transition-all duration-300"
+          className="pointer-events-none absolute transition-all duration-300"
           style={{
             left: spot.left,
             top: spot.top,
             width: spot.width,
             height: spot.height,
+            borderRadius: radius,
             // A bold accent ring on the lit element, then the dim beyond it.
             boxShadow: "0 0 0 3px var(--accent), 0 0 0 9999px rgba(18,14,9,0.76)",
           }}
