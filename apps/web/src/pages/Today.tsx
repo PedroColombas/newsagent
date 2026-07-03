@@ -81,7 +81,8 @@ export function Today() {
 
   // A trigger error, a failed run, or a stalled generation → error with retry (never a silent hang).
   if (genError || (timedOut && waiting) || (report?.status === "failed" && !generating)) {
-    return <GenerateError onRetry={generateNow} />;
+    const message = report?.status === "failed" ? report.error_message : undefined;
+    return <GenerateError onRetry={generateNow} message={message} />;
   }
 
   if (waiting) {
@@ -248,12 +249,12 @@ function CompilingBrief() {
   );
 }
 
-function GenerateError({ onRetry }: { onRetry: () => void }) {
+function GenerateError({ onRetry, message }: { onRetry: () => void; message?: string | null }) {
   return (
     <Centered>
       <h1 className="text-[22px] font-bold tracking-tight">That didn't come through</h1>
       <p className="mt-2 max-w-[280px] text-[14px] leading-relaxed text-[var(--muted)]">
-        Your brief didn't finish generating — it may have stalled. Give it another go.
+        {message || "Your brief didn't finish generating — it may have stalled. Give it another go."}
       </p>
       <button
         onClick={onRetry}

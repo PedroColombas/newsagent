@@ -29,50 +29,81 @@ export const fetchNews = task({
   run: async (payload: { userId: string; date: string }) => {
     const { userId, date } = payload;
 
-    const { data, error } = await supabase()
-      .from("preferences")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
-    if (error) throw error;
-    const prefs = data as Preferences;
+    try {
+      const { data, error } = await supabase()
+        .from("preferences")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+      if (error) throw error;
+      const prefs = data as Preferences;
 
-    // Topics this user has already been briefed on — a topic only gets a catch-up primer
-    // the first time it appears.
-    const { data: history } = await supabase()
-      .from("user_topic_history")
-      .select("topic_key")
-      .eq("user_id", userId);
-    const briefed = new Set((history ?? []).map((h) => h.topic_key as string));
+      // Topics this user has already been briefed on — a topic only gets a catch-up primer
+      // the first time it appears.
+      const { data: history } = await supabase()
+        .from("user_topic_history")
+        .select("topic_key")
+        .eq("user_id", userId);
+      const briefed = new Set((history ?? []).map((h) => h.topic_key as string));
 
-    const topics = await buildTopicQueries(prefs, briefed);
-    logger.info("resolved topic queries", {
-      userId,
-      count: topics.length,
-      windows: topics.map((t) => `${t.topic}:${t.recency}${t.isPrimer ? ":primer" : ""}`),
-    });
+      const topics = await buildTopicQueries(prefs, briefed);
+      logger.info("resolved topic queries", {
+        userId,
+        count: topics.length,
+        windows: topics.map((t) => `${t.topic}:${t.recency}${t.isPrimer ? ":primer" : ""}`),
+      });
 
-    // One Perplexity query per topic. Sequential keeps us under rate limits; revisit with
-    // a small concurrency pool if it's too slow for users with many topics.
-    const fetched: FetchedTopic[] = [];
-    for (const t of topics) {
-      const result = await withDiagnostics(`perplexity:${t.topic}`, () =>
-        perplexitySearch(t.query, {
-          recency: t.recency,
-          system: SYSTEM_PROMPT,
-          contextSize: t.isPrimer ? "high" : "medium",
-        }),
-      );
-      fetched.push({ ...t, content: result.content, sources: result.sources });
+      // One Perplexity query per topic. Sequential keeps us under rate limits; revisit with
+      // a small concurrency pool if it's too slow for users with many topics.
+      const fetched: FetchedTopic[] = [];
+      for (const t of topics) {
+        const result = await withDiagnostics(`perplexity:${t.topic}`, () =>
+          perplexitySearch(t.query, {
+            recency: t.recency,
+            system: SYSTEM_PROMPT,
+            contextSize: t.isPrimer ? "high" : "medium",
+          }),
+        );
+        fetched.push({ ...t, content: result.content, sources: result.sources });
+      }
+      logger.info("fetched all topics", { userId, count: fetched.length });
+
+      // Hand off to synthesis (fire-and-forget; generate-report owns the reports row).
+      await generateReport.trigger({ userId, date, topics: fetched });
+
+      return { userId, date, topicCount: fetched.length };
+    } catch (err) {
+      // fetch-news fails BEFORE generate-report creates the reports row, so without this the app
+      // would just spin until it times out. Record a failed report (unless a good one already
+      // exists) so the UI surfaces an error — with a clearer message for quota/billing — in
+      // seconds rather than minutes.
+      const { data: existing } = await supabase()
+        .from("reports")
+        .select("status")
+        .eq("user_id", userId)
+        .eq("date", date)
+        .maybeSingle();
+      if (existing?.status !== "complete") {
+        await supabase()
+          .from("reports")
+          .upsert(
+            { user_id: userId, date, status: "failed", error_message: friendlyFetchError(err) },
+            { onConflict: "user_id,date" },
+          );
+      }
+      throw err; // rethrow so Trigger records + retries
     }
-    logger.info("fetched all topics", { userId, count: fetched.length });
-
-    // Hand off to synthesis (fire-and-forget; generate-report owns the reports row).
-    await generateReport.trigger({ userId, date, topics: fetched });
-
-    return { userId, date, topicCount: fetched.length };
   },
 });
+
+// Turn a raw pipeline error into a short, user-facing reason for reports.error_message.
+function friendlyFetchError(err: unknown): string {
+  const msg = String((err as { message?: string })?.message ?? err);
+  if (/insufficient_quota|exceeded your current quota|\b429\b|rate.?limit|too many requests|quota/i.test(msg)) {
+    return "The news service is temporarily unavailable (usage limit reached). Please try again shortly.";
+  }
+  return "Couldn't gather today's news — something went wrong. Please try again.";
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Query generation — DESIGNED WITH THE OWNER.
