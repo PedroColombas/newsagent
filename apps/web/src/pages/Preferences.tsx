@@ -6,6 +6,7 @@ import { GenrePicker } from "../components/preferences/GenrePicker";
 import { SubtopicPicker } from "../components/preferences/SubtopicPicker";
 import { CustomInterestsEditor } from "../components/preferences/CustomInterestsEditor";
 import { ReportStyleControls } from "../components/preferences/ReportStyleControls";
+import { DeliveryTimeSelect } from "../components/preferences/DeliveryTimeSelect";
 import { Toggle } from "../components/ui/Toggle";
 
 function SectionLabel({ children }: { children: ReactNode }) {
@@ -88,6 +89,18 @@ export function Preferences() {
       <div className="flex flex-col gap-5">
         <SectionLabel>Report style</SectionLabel>
         <ReportStyleControls prefs={prefs} update={update} />
+      </div>
+
+      {/* Delivery time */}
+      <div className="flex items-center justify-between px-1">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[14.5px] font-semibold">Delivery time</span>
+          <span className="text-[12px] text-[var(--muted)]">When your brief lands each day, in your local time</span>
+        </div>
+        <DeliveryTimeSelect
+          valueUtc={prefs.delivery_hour}
+          onChange={(delivery_hour) => update({ delivery_hour })}
+        />
       </div>
 
       {/* Daily podcast */}
