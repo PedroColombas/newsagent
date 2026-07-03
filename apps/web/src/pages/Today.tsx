@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
-import type { Report } from "@shared/types";
 import { useAuth } from "../auth/AuthProvider";
 import { useLatestReport } from "../hooks/useLatestReport";
 import { usePreferences } from "../hooks/usePreferences";
@@ -20,6 +19,10 @@ import type { PlayerEpisode } from "../player/PlayerProvider";
 import { PlayIcon } from "../components/ui/icons";
 import { RecapCard } from "../components/RecapCard";
 
+// If an on-demand generation hasn't landed in this long, stop waiting and show an error + retry
+// (covers a misrouted or stalled run — never a silent, endless spinner).
+const GEN_TIMEOUT_MS = 5 * 60 * 1000;
+
 export function Today() {
   const { user } = useAuth();
   const { report, episode, loading, refetch } = useLatestReport();
@@ -29,23 +32,40 @@ export function Today() {
 
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
 
-  // Once a report shows up (the on-demand run created it), drop the optimistic flag.
-  useEffect(() => {
-    if (report) setGenerating(false);
-  }, [report]);
+  const waiting =
+    generating || report?.status === "pending" || report?.status === "generating";
 
-  // Poll while waiting on a brief: the optimistic gap before the row exists, then while it compiles.
+  // Drop the optimistic flag once the brief actually completes.
   useEffect(() => {
-    const waiting =
-      generating || report?.status === "pending" || report?.status === "generating";
+    if (report?.status === "complete") setGenerating(false);
+  }, [report?.status]);
+
+  // Poll while a brief is compiling (the gap before the row exists, then until it's done).
+  useEffect(() => {
     if (!waiting) return;
     const t = setInterval(() => void refetch(), 4000);
     return () => clearInterval(t);
-  }, [generating, report?.status, refetch]);
+  }, [waiting, refetch]);
+
+  // Safety net: if a generation never lands, stop waiting and surface an error.
+  useEffect(() => {
+    if (!waiting || startedAt == null) return;
+    const remaining = GEN_TIMEOUT_MS - (Date.now() - startedAt);
+    if (remaining <= 0) {
+      setTimedOut(true);
+      return;
+    }
+    const t = setTimeout(() => setTimedOut(true), remaining);
+    return () => clearTimeout(t);
+  }, [waiting, startedAt]);
 
   async function generateNow() {
     setGenError(false);
+    setTimedOut(false);
+    setStartedAt(Date.now());
     setGenerating(true);
     try {
       await requestTodayBrief();
@@ -59,13 +79,21 @@ export function Today() {
     return <Centered>Loading your brief…</Centered>;
   }
 
+  // A trigger error, a failed run, or a stalled generation → error with retry (never a silent hang).
+  if (genError || (timedOut && waiting) || (report?.status === "failed" && !generating)) {
+    return <GenerateError onRetry={generateNow} />;
+  }
+
+  if (waiting) {
+    return <CompilingBrief />;
+  }
+
   if (!report) {
-    if (generating) return <CompilingBrief />;
-    return <EmptyState deliveryHour={prefs?.delivery_hour} onGenerate={generateNow} error={genError} />;
+    return <EmptyState deliveryHour={prefs?.delivery_hour} onGenerate={generateNow} />;
   }
 
   if (report.status !== "complete" || !report.content) {
-    return <StatusState report={report} />;
+    return <CompilingBrief />;
   }
 
   const sections = report.content.sections;
@@ -162,11 +190,9 @@ export function Today() {
 function EmptyState({
   deliveryHour,
   onGenerate,
-  error,
 }: {
   deliveryHour: number | undefined;
   onGenerate: () => void;
-  error: boolean;
 }) {
   return (
     <Centered>
@@ -190,11 +216,6 @@ function EmptyState({
         Generate today's brief
       </button>
       <p className="mt-3 text-[12px] text-[var(--faint)]">Takes a couple of minutes.</p>
-      {error && (
-        <p className="mt-3 text-[12.5px] text-red-600 dark:text-red-400">
-          Couldn't start it — please try again.
-        </p>
-      )}
     </Centered>
   );
 }
@@ -227,19 +248,19 @@ function CompilingBrief() {
   );
 }
 
-function StatusState({ report }: { report: Report }) {
-  if (report.status === "pending" || report.status === "generating") {
-    return <CompilingBrief />;
-  }
+function GenerateError({ onRetry }: { onRetry: () => void }) {
   return (
     <Centered>
-      <span className="text-[12px] font-semibold uppercase tracking-[1.8px] text-[var(--muted)]">
-        {formatReportDate(report.date)}
-      </span>
-      <h1 className="mt-2 text-[22px] font-bold tracking-tight">Today's brief didn't generate</h1>
-      <p className="mt-2 max-w-[270px] text-[14px] leading-relaxed text-[var(--muted)]">
-        Something went wrong generating this report. It'll retry on the next run.
+      <h1 className="text-[22px] font-bold tracking-tight">That didn't come through</h1>
+      <p className="mt-2 max-w-[280px] text-[14px] leading-relaxed text-[var(--muted)]">
+        Your brief didn't finish generating — it may have stalled. Give it another go.
       </p>
+      <button
+        onClick={onRetry}
+        className="mt-5 rounded-full bg-[var(--accent)] px-5 py-2.5 text-[14.5px] font-semibold text-[var(--on-accent)] shadow-[0_4px_12px_rgba(192,81,43,0.32)] active:opacity-80"
+      >
+        Try again
+      </button>
     </Centered>
   );
 }

@@ -4,7 +4,9 @@ import { createClient } from "@supabase/supabase-js";
 // POST /api/generate   (header: Authorization: Bearer <supabase access token>)
 // Triggers today's brief on demand for the AUTHENTICATED user. The user is taken from the
 // verified token — never from the request body — so no one can generate for another account.
-// Idempotent per (user, date) via the Trigger idempotency key, so repeat clicks can't double-spend.
+// No Trigger idempotency key on purpose: the UI hides the button the instant it's clicked (so no
+// accidental double-fire), retries must always create a fresh run, and generate-report is itself
+// idempotent on (user, date).
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -39,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       body: JSON.stringify({
         payload: { userId, date },
-        options: { idempotencyKey: `ondemand-${userId}-${date}`, ttl: "15m" },
+        options: { ttl: "15m" },
       }),
     });
 
