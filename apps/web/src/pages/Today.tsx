@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import type { Report } from "@shared/types";
@@ -59,7 +60,7 @@ export function Today() {
   }
 
   if (!report) {
-    if (generating) return <CompilingState />;
+    if (generating) return <CompilingBrief />;
     return <EmptyState deliveryHour={prefs?.delivery_hour} onGenerate={generateNow} error={genError} />;
   }
 
@@ -198,32 +199,46 @@ function EmptyState({
   );
 }
 
-function CompilingState() {
+function LoadingBars() {
+  return (
+    <div className="flex h-8 items-end gap-[3.5px]" role="status" aria-label="Compiling">
+      {[0, 1, 2, 3, 4].map((i) => (
+        <motion.span
+          key={i}
+          className="h-full w-[3.5px] origin-bottom rounded-full bg-[var(--accent)]"
+          animate={{ scaleY: [0.35, 1, 0.35] }}
+          transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut", delay: i * 0.12 }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function CompilingBrief() {
   return (
     <Centered>
-      <h1 className="text-[22px] font-bold tracking-tight">Compiling your brief…</h1>
-      <p className="mt-2 max-w-[270px] text-[14px] leading-relaxed text-[var(--muted)]">
-        Gathering today's news and writing it up — this takes a couple of minutes, and it'll appear
-        here automatically.
+      <LoadingBars />
+      <h1 className="mt-5 text-[22px] font-bold tracking-tight">Compiling your brief…</h1>
+      <p className="mt-2 max-w-[280px] text-[14px] leading-relaxed text-[var(--muted)]">
+        Gathering today's news and writing it up — usually ready in a minute or two, and it'll
+        appear here on its own.
       </p>
     </Centered>
   );
 }
 
 function StatusState({ report }: { report: Report }) {
-  const compiling = report.status === "pending" || report.status === "generating";
+  if (report.status === "pending" || report.status === "generating") {
+    return <CompilingBrief />;
+  }
   return (
     <Centered>
       <span className="text-[12px] font-semibold uppercase tracking-[1.8px] text-[var(--muted)]">
         {formatReportDate(report.date)}
       </span>
-      <h1 className="mt-2 text-[22px] font-bold tracking-tight">
-        {compiling ? "Compiling your brief…" : "Today's brief didn't generate"}
-      </h1>
+      <h1 className="mt-2 text-[22px] font-bold tracking-tight">Today's brief didn't generate</h1>
       <p className="mt-2 max-w-[270px] text-[14px] leading-relaxed text-[var(--muted)]">
-        {compiling
-          ? "Your report is being put together — check back in a few minutes."
-          : "Something went wrong generating this report. It'll retry on the next run."}
+        Something went wrong generating this report. It'll retry on the next run.
       </p>
     </Centered>
   );
