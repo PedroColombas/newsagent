@@ -105,7 +105,8 @@ export const fetchNews = task({
       logger.info("fetched all topics", { userId, count: fetched.length });
 
       // Hand off to synthesis (fire-and-forget; generate-report owns the reports row).
-      await generateReport.trigger({ userId, date, topics: fetched });
+      // Pass force through so a regenerate also rebuilds the report + podcast, not just re-fetches.
+      await generateReport.trigger({ userId, date, topics: fetched, force });
 
       return { userId, date, topicCount: fetched.length };
     } catch (err) {

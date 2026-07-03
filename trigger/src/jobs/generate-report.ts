@@ -10,19 +10,20 @@ import type { FetchedTopic } from "./fetch-news";
 export const generateReport = task({
   id: "generate-report",
   maxDuration: 300,
-  run: async (payload: { userId: string; date: string; topics: FetchedTopic[] }) => {
-    const { userId, date, topics } = payload;
+  run: async (payload: { userId: string; date: string; topics: FetchedTopic[]; force?: boolean }) => {
+    const { userId, date, topics, force } = payload;
     const db = supabase();
 
     // Idempotency anchor: reports.unique(user_id, date). If a complete report already
-    // exists for today, this is a retry/duplicate — stop (Trigger.dev may re-run).
+    // exists for today, this is a retry/duplicate — stop (Trigger.dev may re-run). Unless force
+    // (a user-requested regenerate after a topic change), which deliberately rebuilds.
     const { data: existing } = await db
       .from("reports")
       .select("id, status")
       .eq("user_id", userId)
       .eq("date", date)
       .maybeSingle();
-    if (existing?.status === "complete") {
+    if (!force && existing?.status === "complete") {
       logger.info("report already complete — skipping", { userId, date });
       return { reportId: existing.id as string, skipped: true };
     }
@@ -108,9 +109,10 @@ export const generateReport = task({
         sections: content.sections.length,
       });
 
-      // Hand off to podcast generation if the user wants audio.
+      // Hand off to podcast generation if the user wants audio. Pass force so a regenerate also
+      // rebuilds the audio (otherwise the finished episode would be kept and go stale).
       if (prefs.podcast_enabled) {
-        await generatePodcast.trigger({ reportId });
+        await generatePodcast.trigger({ reportId, force });
       }
 
       return { reportId, skipped: false };

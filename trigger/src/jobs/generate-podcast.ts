@@ -27,8 +27,8 @@ const SPEAKERS: Record<string, SpeechOptions> = {
 export const generatePodcast = task({
   id: "generate-podcast",
   maxDuration: 300,
-  run: async (payload: { reportId: string }) => {
-    const { reportId } = payload;
+  run: async (payload: { reportId: string; force?: boolean }) => {
+    const { reportId, force } = payload;
     const db = supabase();
 
     const { data: report, error: reportError } = await db
@@ -49,7 +49,7 @@ export const generatePodcast = task({
       .select("id, status")
       .eq("report_id", reportId)
       .maybeSingle();
-    if (existing?.status === "complete") {
+    if (!force && existing?.status === "complete") {
       logger.info("podcast already complete — skipping", { reportId });
       return { episodeId: existing.id as string, skipped: true };
     }
