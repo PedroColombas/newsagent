@@ -4,6 +4,18 @@
   --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
+/* Equalizer loading bars — CSS-driven so they pause and resume cleanly across tab backgrounding
+   (a JS/rAF animation can freeze when the tab is hidden and not restart on return). */
+@keyframes equalize {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
 /* Warm editorial palette. Light is primary; flips to dark with the system setting.
    Used via arbitrary values, e.g. bg-[var(--paper)] text-[var(--ink)] text-[var(--accent)]. */
 :root {

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useAuth } from "../auth/AuthProvider";
@@ -19,9 +18,10 @@ import type { PlayerEpisode } from "../player/PlayerProvider";
 import { PlayIcon } from "../components/ui/icons";
 import { RecapCard } from "../components/RecapCard";
 
-// If an on-demand generation hasn't landed in this long, stop waiting and show an error + retry
-// (covers a misrouted or stalled run — never a silent, endless spinner).
-const GEN_TIMEOUT_MS = 5 * 60 * 1000;
+// If an on-demand generation hasn't landed in this long of FOREGROUND time (background time is
+// excluded — see the visibility handler), stop waiting and show an error + retry. Generous, since
+// the first all-primer run is the slowest; real failures surface faster via a failed report.
+const GEN_TIMEOUT_MS = 8 * 60 * 1000;
 
 export function Today() {
   const { user } = useAuth();
@@ -61,6 +61,20 @@ export function Today() {
     const t = setTimeout(() => setTimedOut(true), remaining);
     return () => clearTimeout(t);
   }, [waiting, startedAt]);
+
+  // Returning from background (tab hidden / phone locked) leaves timers frozen and state stale.
+  // Re-poll and restart the timeout window so background time isn't counted as "stalled".
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === "visible" && waiting) {
+        setTimedOut(false);
+        setStartedAt(Date.now());
+        void refetch();
+      }
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [waiting, refetch]);
 
   async function generateNow() {
     setGenError(false);
@@ -225,11 +239,10 @@ function LoadingBars() {
   return (
     <div className="flex h-8 items-end gap-[3.5px]" role="status" aria-label="Compiling">
       {[0, 1, 2, 3, 4].map((i) => (
-        <motion.span
+        <span
           key={i}
           className="h-full w-[3.5px] origin-bottom rounded-full bg-[var(--accent)]"
-          animate={{ scaleY: [0.35, 1, 0.35] }}
-          transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut", delay: i * 0.12 }}
+          style={{ animation: `equalize 0.9s ease-in-out ${i * 0.12}s infinite` }}
         />
       ))}
     </div>
