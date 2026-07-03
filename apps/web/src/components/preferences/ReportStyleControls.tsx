@@ -54,30 +54,6 @@ export function ReportStyleControls({
       </div>
 
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between px-1">
-          <span className="text-[13.5px] font-semibold">Sections per report</span>
-          <div className="flex items-center gap-3">
-            <StepButton
-              label="−"
-              disabled={prefs.max_topics <= 3}
-              onClick={() => update({ max_topics: Math.max(3, prefs.max_topics - 1) })}
-            />
-            <span className="w-4 text-center text-[15px] font-semibold tabular-nums">
-              {prefs.max_topics}
-            </span>
-            <StepButton
-              label="+"
-              disabled={prefs.max_topics >= 10}
-              onClick={() => update({ max_topics: Math.min(10, prefs.max_topics + 1) })}
-            />
-          </div>
-        </div>
-        <span className="px-1 text-[12px] text-[var(--faint)]">
-          How many topics your brief covers (3–10), most specific first.
-        </span>
-      </div>
-
-      <div className="flex flex-col gap-2">
         <span className="px-1 text-[13.5px] font-semibold">Exclude</span>
         <textarea
           value={prefs.exclusions}
@@ -91,23 +67,3 @@ export function ReportStyleControls({
   );
 }
 
-function StepButton({
-  label,
-  onClick,
-  disabled,
-}: {
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[18px] leading-none text-[var(--ink)] disabled:opacity-40"
-    >
-      {label}
-    </button>
-  );
-}

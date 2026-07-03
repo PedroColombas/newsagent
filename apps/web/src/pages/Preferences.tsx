@@ -1,13 +1,8 @@
 import type { ReactNode } from "react";
 import { usePreferences } from "../hooks/usePreferences";
-import { toggleGenre, toggleSubtopic } from "../lib/preferences-actions";
-import { MAX_GENRES } from "../lib/preferences-options";
-import { GenrePicker } from "../components/preferences/GenrePicker";
-import { SubtopicPicker } from "../components/preferences/SubtopicPicker";
-import { CustomInterestsEditor } from "../components/preferences/CustomInterestsEditor";
 import { ReportStyleControls } from "../components/preferences/ReportStyleControls";
 import { DeliveryTimeSelect } from "../components/preferences/DeliveryTimeSelect";
-import { TopicOrderList } from "../components/preferences/TopicOrderList";
+import { TopicManager } from "../components/preferences/TopicManager";
 import { Toggle } from "../components/ui/Toggle";
 
 function SectionLabel({ children }: { children: ReactNode }) {
@@ -49,58 +44,21 @@ export function Preferences() {
         )}
       </div>
 
-      {/* Genres */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between px-1">
-          <SectionLabel>Genres</SectionLabel>
-          <span className="text-[12.5px] text-[var(--faint)]">
-            {prefs.genres.length} of {MAX_GENRES}
-          </span>
-        </div>
-        <GenrePicker selected={prefs.genres} onToggle={(g) => toggleGenre(prefs, update, g)} />
-      </div>
-
-      {/* Subtopics — dynamically suggested per genre */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-[var(--line)] border-l-[3px] border-l-[var(--accent)] bg-[var(--surface)] p-4">
-        <span className="text-[11.5px] font-semibold uppercase tracking-[0.6px] text-[var(--accent)]">
-          Subtopics · from your genres
-        </span>
-        <SubtopicPicker
-          genres={prefs.genres}
-          subtopics={prefs.subtopics}
-          onToggle={(genre, sub) => toggleSubtopic(prefs, update, genre, sub)}
-        />
-      </div>
-
-      {/* Custom interests */}
+      {/* Your topics — each is a section; drag to reorder, tap to edit, or add */}
       <div className="flex flex-col gap-3">
         <div className="px-1">
-          <SectionLabel>Custom interests</SectionLabel>
+          <SectionLabel>Your topics</SectionLabel>
           <p className="mt-1 text-[12.5px] text-[var(--muted)]">
-            Anything specific, in your own words — interpreted fresh each day.
+            Each is a section in your brief. Drag to reorder, tap to edit, or add your own.
           </p>
         </div>
-        <CustomInterestsEditor
-          interests={prefs.custom_interests ?? []}
-          onChange={(custom_interests) => update({ custom_interests })}
-        />
+        <TopicManager prefs={prefs} update={update} />
       </div>
 
       {/* Report style */}
       <div className="flex flex-col gap-5">
         <SectionLabel>Report style</SectionLabel>
         <ReportStyleControls prefs={prefs} update={update} />
-      </div>
-
-      {/* Report order */}
-      <div className="flex flex-col gap-3">
-        <div className="px-1">
-          <SectionLabel>Report order</SectionLabel>
-          <p className="mt-1 text-[12.5px] text-[var(--muted)]">
-            Drag to set the order your sections appear in.
-          </p>
-        </div>
-        <TopicOrderList prefs={prefs} update={update} />
       </div>
 
       {/* Delivery time */}

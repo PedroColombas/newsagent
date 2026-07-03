@@ -39,18 +39,18 @@ export function planReportSections(prefs: Preferences): PlannedTopic[] {
     if (trimmed) topics.push({ topic: trimmed, level: 3, genre: null });
   }
 
-  // Default order: most-specific-first (stable within a level), capped at max_topics.
+  // Default order: most-specific-first (stable within a level). No cap — the user's topic list IS
+  // their brief (they add/remove topics directly in Preferences).
   topics.sort((a, b) => b.level - a.level);
-  const capped = topics.slice(0, prefs.max_topics);
 
-  // Apply the user's manual order (drag-to-reorder in the wizard review): ordered sections first in
-  // that order; anything not in the order stays in its default position after (stable sort).
+  // Apply the user's manual order (drag-to-reorder): ordered sections first in that order; anything
+  // not in the order stays in its default position after (stable sort).
   const order = prefs.topic_order ?? [];
   if (order.length > 0) {
     const rank = new Map(order.map((k, i) => [k, i] as const));
-    capped.sort((a, b) => (rank.get(sectionKey(a)) ?? Infinity) - (rank.get(sectionKey(b)) ?? Infinity));
+    topics.sort((a, b) => (rank.get(sectionKey(a)) ?? Infinity) - (rank.get(sectionKey(b)) ?? Infinity));
   }
-  return capped;
+  return topics;
 }
 
 /** Total candidate sections before the max_topics cap — for "showing N of M" messaging. */

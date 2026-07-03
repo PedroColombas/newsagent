@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Preferences } from "@shared/types";
-import { planReportSections, countCandidateSections } from "@shared/plan-topics";
+import { planReportSections } from "@shared/plan-topics";
 import { toggleGenre, toggleSubtopic } from "../lib/preferences-actions";
 import { REPORT_MODES, VOICES } from "../lib/preferences-options";
 import { GenrePicker } from "../components/preferences/GenrePicker";
@@ -162,8 +162,6 @@ function EditionPreview({
   const modeLabel = REPORT_MODES.find((m) => m.value === prefs.report_mode)?.label;
   const voiceLabel = VOICES.find((v) => v.value === prefs.voice)?.label;
   const sections = planReportSections(prefs);
-  const candidates = countCandidateSections(prefs);
-  const trimmed = candidates > sections.length;
 
   return (
     <div className="flex h-full flex-col">
@@ -187,12 +185,6 @@ function EditionPreview({
         <div className="mt-3">
           <TopicOrderList prefs={prefs} update={update} />
         </div>
-        {trimmed && (
-          <p className="mt-3 px-1 text-[12px] leading-relaxed text-[var(--muted)]">
-            Showing {sections.length} of {candidates} topics (most specific kept). Raise “Sections per report” to
-            include more.
-          </p>
-        )}
       </div>
 
       <div className="flex flex-none items-center gap-3 pt-4">
