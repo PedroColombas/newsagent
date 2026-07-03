@@ -1,8 +1,12 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import type { Report } from "@shared/types";
 import { useAuth } from "../auth/AuthProvider";
 import { useLatestReport } from "../hooks/useLatestReport";
+import { usePreferences } from "../hooks/usePreferences";
+import { requestTodayBrief } from "../lib/api";
+import { formatDeliveryHour } from "../lib/delivery-time";
 import {
   formatReportDate,
   greeting,
@@ -17,24 +21,46 @@ import { RecapCard } from "../components/RecapCard";
 
 export function Today() {
   const { user } = useAuth();
-  const { report, episode, loading } = useLatestReport();
+  const { report, episode, loading, refetch } = useLatestReport();
+  const { prefs } = usePreferences();
   const { play } = usePlayer();
   const navigate = useNavigate();
+
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState(false);
+
+  // Once a report shows up (the on-demand run created it), drop the optimistic flag.
+  useEffect(() => {
+    if (report) setGenerating(false);
+  }, [report]);
+
+  // Poll while waiting on a brief: the optimistic gap before the row exists, then while it compiles.
+  useEffect(() => {
+    const waiting =
+      generating || report?.status === "pending" || report?.status === "generating";
+    if (!waiting) return;
+    const t = setInterval(() => void refetch(), 4000);
+    return () => clearInterval(t);
+  }, [generating, report?.status, refetch]);
+
+  async function generateNow() {
+    setGenError(false);
+    setGenerating(true);
+    try {
+      await requestTodayBrief();
+    } catch {
+      setGenerating(false);
+      setGenError(true);
+    }
+  }
 
   if (loading) {
     return <Centered>Loading your brief…</Centered>;
   }
 
   if (!report) {
-    return (
-      <Centered>
-        <h1 className="text-[22px] font-bold tracking-tight">No briefs yet</h1>
-        <p className="mt-2 max-w-[260px] text-[14px] leading-relaxed text-[var(--muted)]">
-          Your first daily brief will appear here once it's been compiled. Set your topics in
-          Preferences to shape it.
-        </p>
-      </Centered>
-    );
+    if (generating) return <CompilingState />;
+    return <EmptyState deliveryHour={prefs?.delivery_hour} onGenerate={generateNow} error={genError} />;
   }
 
   if (report.status !== "complete" || !report.content) {
@@ -129,6 +155,58 @@ export function Today() {
         ))}
       </div>
     </section>
+  );
+}
+
+function EmptyState({
+  deliveryHour,
+  onGenerate,
+  error,
+}: {
+  deliveryHour: number | undefined;
+  onGenerate: () => void;
+  error: boolean;
+}) {
+  return (
+    <Centered>
+      <h1 className="text-[22px] font-bold tracking-tight">You're all set</h1>
+      <p className="mt-2 max-w-[280px] text-[14px] leading-relaxed text-[var(--muted)]">
+        Your first brief will land{" "}
+        {deliveryHour != null ? (
+          <>
+            tomorrow at{" "}
+            <span className="font-semibold text-[var(--ink)]">{formatDeliveryHour(deliveryHour)}</span>
+          </>
+        ) : (
+          "tomorrow morning"
+        )}
+        . Want to see it now?
+      </p>
+      <button
+        onClick={onGenerate}
+        className="mt-5 rounded-full bg-[var(--accent)] px-5 py-2.5 text-[14.5px] font-semibold text-[var(--on-accent)] shadow-[0_4px_12px_rgba(192,81,43,0.32)] active:opacity-80"
+      >
+        Generate today's brief
+      </button>
+      <p className="mt-3 text-[12px] text-[var(--faint)]">Takes a couple of minutes.</p>
+      {error && (
+        <p className="mt-3 text-[12.5px] text-red-600 dark:text-red-400">
+          Couldn't start it — please try again.
+        </p>
+      )}
+    </Centered>
+  );
+}
+
+function CompilingState() {
+  return (
+    <Centered>
+      <h1 className="text-[22px] font-bold tracking-tight">Compiling your brief…</h1>
+      <p className="mt-2 max-w-[270px] text-[14px] leading-relaxed text-[var(--muted)]">
+        Gathering today's news and writing it up — this takes a couple of minutes, and it'll appear
+        here automatically.
+      </p>
+    </Centered>
   );
 }
 

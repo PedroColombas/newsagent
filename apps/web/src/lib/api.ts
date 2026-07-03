@@ -1,4 +1,5 @@
 import { SUBTOPIC_FALLBACK } from "./preferences-options";
+import { supabase } from "./supabase";
 
 const CACHE_PREFIX = "subtopics:";
 
@@ -53,4 +54,21 @@ export async function fetchSubtopicSuggestions(genre: string): Promise<string[]>
   } catch {
     return SUBTOPIC_FALLBACK[genre] ?? [];
   }
+}
+
+/**
+ * Ask the backend to generate today's brief on demand for the signed-in user (the first-run
+ * "Generate now"). The server verifies the session and triggers the pipeline; the caller then
+ * polls for the report to appear.
+ */
+export async function requestTodayBrief(): Promise<void> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Not signed in");
+
+  const res = await fetch("/api/generate", {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`generate failed: ${res.status}`);
 }
