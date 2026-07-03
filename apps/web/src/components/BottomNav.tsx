@@ -62,6 +62,7 @@ export function BottomNav() {
           key={tab.to}
           to={tab.to}
           end={tab.end}
+          data-tour={tab.to === "/preferences" ? "prefs" : tab.to === "/history" ? "history" : undefined}
           className={({ isActive }) =>
             `flex flex-col items-center gap-1 pt-2.5 pb-2 ${
               isActive ? "text-[var(--accent)]" : "text-[var(--faint)]"

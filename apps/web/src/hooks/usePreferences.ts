@@ -17,6 +17,7 @@ const EDITABLE_COLUMNS = [
   "context_depth",
   "podcast_enabled",
   "delivery_hour",
+  "walkthrough_seen",
 ] as const;
 
 function editableSubset(prefs: Preferences): Partial<Preferences> {

@@ -32,6 +32,7 @@ export interface Preferences {
   context_depth: ContextDepth;    // catch-up depth for newly-followed topics
   podcast_enabled: boolean;
   delivery_hour: number;          // 0–23, UTC
+  walkthrough_seen: boolean;      // first-run coach-mark tour dismissed
   updated_at: string;
 }
 

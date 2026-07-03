@@ -6,6 +6,7 @@ import { usePreferences } from "./hooks/usePreferences";
 import { AppShell } from "./components/AppShell";
 import { FullPlayer } from "./components/FullPlayer";
 import { Onboarding } from "./pages/Onboarding";
+import { Walkthrough } from "./components/Walkthrough";
 import { Login } from "./pages/Login";
 
 // Lazy — the reading view pulls in react-markdown, which we don't want in the initial bundle.
@@ -39,7 +40,15 @@ function AuthedApp() {
     return <Onboarding prefs={prefs} update={update} onDone={() => setFinishedOnboarding(true)} />;
   }
 
-  return <AuthedRoutes />;
+  return (
+    <>
+      <AuthedRoutes />
+      {/* First-run coach marks, once, gated per-account. */}
+      {!prefs.walkthrough_seen && (
+        <Walkthrough onFinish={() => update({ walkthrough_seen: true })} />
+      )}
+    </>
+  );
 }
 
 const HOME_LOCATION = { pathname: "/", search: "", hash: "", state: null, key: "default" } as Location;

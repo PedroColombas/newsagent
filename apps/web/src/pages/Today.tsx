@@ -289,6 +289,7 @@ function EmptyState({
       </p>
       <button
         onClick={onGenerate}
+        data-tour="generate"
         className="mt-5 rounded-full bg-[var(--accent)] px-5 py-2.5 text-[14.5px] font-semibold text-[var(--on-accent)] shadow-[0_4px_12px_rgba(192,81,43,0.32)] active:opacity-80"
       >
         Generate today's brief
