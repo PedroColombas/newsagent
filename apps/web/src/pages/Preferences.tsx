@@ -7,6 +7,7 @@ import { SubtopicPicker } from "../components/preferences/SubtopicPicker";
 import { CustomInterestsEditor } from "../components/preferences/CustomInterestsEditor";
 import { ReportStyleControls } from "../components/preferences/ReportStyleControls";
 import { DeliveryTimeSelect } from "../components/preferences/DeliveryTimeSelect";
+import { TopicOrderList } from "../components/preferences/TopicOrderList";
 import { Toggle } from "../components/ui/Toggle";
 
 function SectionLabel({ children }: { children: ReactNode }) {
@@ -89,6 +90,17 @@ export function Preferences() {
       <div className="flex flex-col gap-5">
         <SectionLabel>Report style</SectionLabel>
         <ReportStyleControls prefs={prefs} update={update} />
+      </div>
+
+      {/* Report order */}
+      <div className="flex flex-col gap-3">
+        <div className="px-1">
+          <SectionLabel>Report order</SectionLabel>
+          <p className="mt-1 text-[12.5px] text-[var(--muted)]">
+            Drag to set the order your sections appear in.
+          </p>
+        </div>
+        <TopicOrderList prefs={prefs} update={update} />
       </div>
 
       {/* Delivery time */}

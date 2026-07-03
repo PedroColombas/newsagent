@@ -18,17 +18,6 @@ const TABS: Tab[] = [
     ),
   },
   {
-    to: "/history",
-    label: "History",
-    end: false,
-    icon: () => (
-      <>
-        <circle cx="12" cy="12" r="8.4" />
-        <path d="M12 7.6 V12 L15 14" />
-      </>
-    ),
-  },
-  {
     to: "/preferences",
     label: "Prefs",
     end: false,
@@ -38,6 +27,17 @@ const TABS: Tab[] = [
         <circle cx="15" cy="8.5" r="2.5" fill={active ? "currentColor" : "none"} />
         <line x1="4" y1="15.5" x2="20" y2="15.5" />
         <circle cx="9" cy="15.5" r="2.5" fill={active ? "currentColor" : "none"} />
+      </>
+    ),
+  },
+  {
+    to: "/history",
+    label: "History",
+    end: false,
+    icon: () => (
+      <>
+        <circle cx="12" cy="12" r="8.4" />
+        <path d="M12 7.6 V12 L15 14" />
       </>
     ),
   },

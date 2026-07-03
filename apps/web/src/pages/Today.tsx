@@ -243,6 +243,7 @@ export function Today() {
           <button
             key={i}
             onClick={() => navigate(`/report/${report.date}#s${i}`)}
+            data-tour={i === 0 ? "topic" : undefined}
             className="flex flex-col gap-2 border-t border-[var(--line)] py-5 text-left transition-opacity active:opacity-60"
           >
             <div className="flex items-center gap-2">

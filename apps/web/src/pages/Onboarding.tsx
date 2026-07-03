@@ -1,9 +1,8 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { Reorder } from "motion/react";
 import type { Preferences } from "@shared/types";
-import { planReportSections, countCandidateSections, sectionKey, type PlannedTopic } from "@shared/plan-topics";
+import { planReportSections, countCandidateSections } from "@shared/plan-topics";
 import { toggleGenre, toggleSubtopic } from "../lib/preferences-actions";
 import { REPORT_MODES, VOICES } from "../lib/preferences-options";
 import { GenrePicker } from "../components/preferences/GenrePicker";
@@ -12,6 +11,7 @@ import { CustomInterestsEditor } from "../components/preferences/CustomInterests
 import { ReportStyleControls } from "../components/preferences/ReportStyleControls";
 import { Toggle } from "../components/ui/Toggle";
 import { WelcomeCarousel } from "../components/WelcomeCarousel";
+import { TopicOrderList } from "../components/preferences/TopicOrderList";
 
 const STEPS = [
   { title: "Pick your genres", subtitle: "The broad areas you want covered — up to five." },
@@ -136,12 +136,6 @@ export function Onboarding({
   );
 }
 
-function describeSection(s: PlannedTopic): string {
-  if (s.level === 3) return "Custom interest";
-  if (s.level === 2) return `${s.genre} · subtopic`;
-  return "Genre overview";
-}
-
 function PreviewTag({ children, accent = false }: { children: ReactNode; accent?: boolean }) {
   return (
     <span
@@ -167,14 +161,9 @@ function EditionPreview({
 }) {
   const modeLabel = REPORT_MODES.find((m) => m.value === prefs.report_mode)?.label;
   const voiceLabel = VOICES.find((v) => v.value === prefs.voice)?.label;
-  const [ordered, setOrdered] = useState(() => planReportSections(prefs));
+  const sections = planReportSections(prefs);
   const candidates = countCandidateSections(prefs);
-  const trimmed = candidates > ordered.length;
-
-  function reorder(next: PlannedTopic[]) {
-    setOrdered(next);
-    update({ topic_order: next.map(sectionKey) });
-  }
+  const trimmed = candidates > sections.length;
 
   return (
     <div className="flex h-full flex-col">
@@ -182,7 +171,7 @@ function EditionPreview({
         <span className="text-[12px] font-bold uppercase tracking-[0.8px] text-[var(--accent)]">All set</span>
         <h1 className="mt-3 text-[25px] font-bold leading-tight tracking-tight">Here's tomorrow's edition</h1>
         <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--muted)]">
-          Your brief will run {ordered.length} {ordered.length === 1 ? "section" : "sections"}. Drag to reorder.
+          Your brief will run {sections.length} {sections.length === 1 ? "section" : "sections"}. Drag to reorder.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {modeLabel && <PreviewTag>{modeLabel}</PreviewTag>}
@@ -195,40 +184,12 @@ function EditionPreview({
         <span className="text-[11px] font-bold uppercase tracking-[1.2px] text-[var(--faint)]">
           In this edition
         </span>
-        {ordered.length === 0 ? (
-          <p className="mt-3 text-[13px] text-[var(--muted)]">
-            No topics picked yet — go back and add a genre or two to shape your brief.
-          </p>
-        ) : (
-          <Reorder.Group
-            axis="y"
-            values={ordered}
-            onReorder={reorder}
-            className="mt-3 flex flex-col gap-2"
-          >
-            {ordered.map((s, i) => (
-              <Reorder.Item
-                key={sectionKey(s)}
-                value={s}
-                className="flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3 active:cursor-grabbing"
-              >
-                <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-[var(--accent)]/12 text-[12px] font-bold text-[var(--accent)]">
-                  {i + 1}
-                </span>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-[14px] font-semibold leading-snug">{s.topic}</span>
-                  <span className="text-[11.5px] text-[var(--faint)]">{describeSection(s)}</span>
-                </div>
-                <svg width="16" height="16" viewBox="0 0 24 24" className="flex-none text-[var(--faint)]" aria-hidden>
-                  <path d="M5 9h14M5 15h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </Reorder.Item>
-            ))}
-          </Reorder.Group>
-        )}
+        <div className="mt-3">
+          <TopicOrderList prefs={prefs} update={update} />
+        </div>
         {trimmed && (
           <p className="mt-3 px-1 text-[12px] leading-relaxed text-[var(--muted)]">
-            Showing {ordered.length} of {candidates} topics (most specific kept). Raise “Sections per report” to
+            Showing {sections.length} of {candidates} topics (most specific kept). Raise “Sections per report” to
             include more.
           </p>
         )}

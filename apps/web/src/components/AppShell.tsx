@@ -9,7 +9,7 @@ import { Preferences } from "../pages/Preferences";
 import { Profile } from "../pages/Profile";
 
 // Tab order drives slide direction: moving to a tab on the right slides left, and vice-versa.
-const TAB_ORDER = ["/", "/history", "/preferences", "/profile"];
+const TAB_ORDER = ["/", "/preferences", "/history", "/profile"];
 function tabIndex(pathname: string) {
   const i = TAB_ORDER.indexOf(pathname);
   return i === -1 ? 0 : i;

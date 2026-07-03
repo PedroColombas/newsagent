@@ -12,12 +12,13 @@ interface Step {
   body: string;
 }
 
-// Ordered to flow left-to-right along the bottom nav: podcast (on Today) → History → Preferences.
+// Order: a topic section on Today, then the podcast, then left-to-right along the nav (Preferences,
+// then History).
 const STEPS: Step[] = [
   {
-    target: null,
-    title: "Your first brief is here",
-    body: "Nice — here's your personalised briefing. A quick tour of what else it does.",
+    target: '[data-tour="topic"]',
+    title: "This is your brief",
+    body: "Each section is a topic you chose — written fresh from today's news, shaped by your preferences.",
   },
   {
     target: '[data-tour="podcast"]',
@@ -25,14 +26,14 @@ const STEPS: Step[] = [
     body: "Every brief comes as a conversational podcast. Tap here to play — expand it for chapters and speed.",
   },
   {
+    target: '[data-tour="prefs"]',
+    title: "Shape what you read",
+    body: "Genres, your own interests, the writing style, the section order, and when it lands — all in Preferences.",
+  },
+  {
     target: '[data-tour="history"]',
     title: "Never fall behind",
     body: "Past briefs live in History. Away a few days? Your next one opens with a “While you were away” catch-up.",
-  },
-  {
-    target: '[data-tour="prefs"]',
-    title: "Shape what you read",
-    body: "Genres, your own interests, the writing style, and when it lands — all in Preferences. This is the heart of it.",
   },
 ];
 
@@ -51,6 +52,7 @@ export function Walkthrough({ onFinish }: { onFinish: () => void }) {
     }
     const measure = () => {
       const el = document.querySelector(step.target as string);
+      if (el) el.scrollIntoView({ block: "nearest" });
       setRect(el ? el.getBoundingClientRect() : null);
     };
     measure();
