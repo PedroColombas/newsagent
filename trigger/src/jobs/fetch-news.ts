@@ -26,19 +26,21 @@ export interface FetchedTopic extends TopicQuery {
 export const fetchNews = task({
   id: "fetch-news",
   maxDuration: 300,
-  run: async (payload: { userId: string; date: string }) => {
-    const { userId, date } = payload;
+  run: async (payload: { userId: string; date: string; force?: boolean }) => {
+    const { userId, date, force } = payload;
 
     try {
       // If today's brief is already complete (a duplicate click, a Trigger retry, or the daily
       // cron after an on-demand run), don't redo the work or downgrade the finished report.
+      // EXCEPT when force is set (the user changed their topics and asked to regenerate today) —
+      // then we deliberately rebuild over the finished report.
       const { data: current } = await supabase()
         .from("reports")
         .select("status")
         .eq("user_id", userId)
         .eq("date", date)
         .maybeSingle();
-      if (current?.status === "complete") {
+      if (!force && current?.status === "complete") {
         logger.info("report already complete — skipping fetch", { userId, date });
         return { userId, date, skipped: true };
       }
@@ -147,8 +149,8 @@ function friendlyFetchError(err: unknown): string {
 //     interests get a cheap Claude call to extract a clean topic label.
 //   • Window: latest (24h) per topic; a topic NEW to the user gets a one-time catch-up
 //     primer (wider "month" window + background query) unless context_depth is "latest".
-//   • Overflow past max_topics is prioritised by specificity (custom > subtopic >
-//     genre). That last rule is the easiest knob to retune.
+//   • Every topic the user keeps becomes a section — no cap. planReportSections decides the
+//     set and order; here we resolve each into a query.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT =
@@ -193,7 +195,7 @@ function topicKey(p: PlannedTopic): string {
 }
 
 async function buildTopicQueries(prefs: Preferences, briefed: Set<string>): Promise<TopicQuery[]> {
-  // Which sections (and their order + cap) is shared with the app's edition preview via
+  // Which sections (and their order) is shared with the app's edition preview via
   // planReportSections, so the two never drift. Here we resolve each into a query.
   const out: TopicQuery[] = [];
   for (const planned of planReportSections(prefs)) {
@@ -201,8 +203,7 @@ async function buildTopicQueries(prefs: Preferences, briefed: Set<string>): Prom
     // A topic new to this user gets a one-time catch-up primer (unless they chose "latest").
     const isPrimer = prefs.context_depth !== "latest" && !briefed.has(key);
 
-    // L3 custom interests: sharpen the raw text into a clean search label (only for topics
-    // that survived the cap, so we don't waste calls on overflow).
+    // L3 custom interests: sharpen the raw free-text into a clean search label.
     const topic =
       planned.level === 3 ? await resolveInterestTopic(planned.topic) : planned.topic;
     const recency = isPrimer ? PRIMER_WINDOW : DAILY_WINDOW;

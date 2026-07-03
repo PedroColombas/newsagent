@@ -29,6 +29,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (userErr || !userData?.user) return res.status(401).json({ error: "Invalid session" });
   const userId = userData.user.id;
 
+  // force = regenerate over an already-complete brief (the user changed their topics). Absent /
+  // false for the first-run "Generate now", which just fills an empty day.
+  const force = (req.body as { force?: boolean } | undefined)?.force === true;
+
   const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC) — matches the cron
 
   try {
@@ -40,7 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        payload: { userId, date },
+        payload: { userId, date, force },
         options: { ttl: "15m" },
       }),
     });

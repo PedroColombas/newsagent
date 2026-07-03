@@ -57,18 +57,20 @@ export async function fetchSubtopicSuggestions(genre: string): Promise<string[]>
 }
 
 /**
- * Ask the backend to generate today's brief on demand for the signed-in user (the first-run
- * "Generate now"). The server verifies the session and triggers the pipeline; the caller then
- * polls for the report to appear.
+ * Ask the backend to generate today's brief on demand for the signed-in user. Used for the
+ * first-run "Generate now" (force = false: fills an empty day) and for "Regenerate today" after
+ * a topic change (force = true: rebuilds over an already-complete brief). The server verifies the
+ * session and triggers the pipeline; the caller then polls for the report to appear.
  */
-export async function requestTodayBrief(): Promise<void> {
+export async function requestTodayBrief(force = false): Promise<void> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new Error("Not signed in");
 
   const res = await fetch("/api/generate", {
     method: "POST",
-    headers: { authorization: `Bearer ${token}` },
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ force }),
   });
   if (!res.ok) throw new Error(`generate failed: ${res.status}`);
 }

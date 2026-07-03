@@ -103,6 +103,8 @@ function TopicEditSheet({
   const [text, setText] = useState(entry?.kind === "custom" ? entry.text : "");
 
   const suggestions = genre ? SUBTOPIC_FALLBACK[genre] ?? [] : [];
+  // Always include the currently-selected focus, even if it isn't in the suggestion set.
+  const focusChips = Array.from(new Set([...suggestions, ...(sub ? [sub] : [])]));
   const canSave = mode === "custom" ? text.trim().length > 0 : genre.length > 0;
 
   function save() {
@@ -163,30 +165,31 @@ function TopicEditSheet({
                 ))}
               </div>
             </div>
-            <div>
-              <span className="text-[11px] font-semibold uppercase tracking-[1px] text-[var(--faint)]">
-                Focus (optional)
-              </span>
-              <input
-                value={sub}
-                onChange={(e) => setSub(e.target.value)}
-                placeholder="e.g. AI chips — blank for the whole genre"
-                className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3.5 py-2.5 text-[14px] outline-none placeholder:text-[var(--faint)] focus:border-[var(--accent)]"
-              />
-              {suggestions.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {suggestions.map((sg) => (
+            {focusChips.length > 0 && (
+              <div>
+                <span className="text-[11px] font-semibold uppercase tracking-[1px] text-[var(--faint)]">
+                  Focus (optional)
+                </span>
+                <p className="mt-1 text-[11.5px] text-[var(--muted)]">
+                  Pick one, or leave blank for the whole genre.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {focusChips.map((sg) => (
                     <button
                       key={sg}
-                      onClick={() => setSub(sg)}
-                      className="rounded-full border border-[var(--line)] px-2.5 py-1 text-[11.5px] text-[var(--muted)]"
+                      onClick={() => setSub(sub === sg ? "" : sg)}
+                      className={`rounded-full px-3 py-1.5 text-[12.5px] font-medium ${
+                        sub === sg
+                          ? "bg-[var(--accent)] text-[var(--on-accent)]"
+                          : "border border-[var(--line)] text-[var(--muted)]"
+                      }`}
                     >
                       {sg}
                     </button>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="mt-4">
