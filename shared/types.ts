@@ -33,6 +33,7 @@ export interface Preferences {
   podcast_enabled: boolean;
   delivery_hour: number;          // 0–23, UTC
   walkthrough_seen: boolean;      // first-run coach-mark tour dismissed
+  topic_order: string[];          // user-chosen section order (keys); [] = specific-first default
   updated_at: string;
 }
 

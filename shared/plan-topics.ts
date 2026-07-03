@@ -16,6 +16,13 @@ export interface PlannedTopic {
  * sharpens each L3 interest into a clean search label at run time; here we keep the user's
  * own words.
  */
+/** Stable key for a section — same format as fetch-news's topicKey; used for the manual order. */
+export function sectionKey(t: PlannedTopic): string {
+  if (t.level === 3) return `interest:${t.topic}`;
+  if (t.level === 2) return `sub:${t.genre}:${t.topic}`;
+  return `genre:${t.topic}`;
+}
+
 export function planReportSections(prefs: Preferences): PlannedTopic[] {
   const topics: PlannedTopic[] = [];
 
@@ -32,9 +39,18 @@ export function planReportSections(prefs: Preferences): PlannedTopic[] {
     if (trimmed) topics.push({ topic: trimmed, level: 3, genre: null });
   }
 
-  // Stable sort by specificity (descending level), then cap at max_topics.
+  // Default order: most-specific-first (stable within a level), capped at max_topics.
   topics.sort((a, b) => b.level - a.level);
-  return topics.slice(0, prefs.max_topics);
+  const capped = topics.slice(0, prefs.max_topics);
+
+  // Apply the user's manual order (drag-to-reorder in the wizard review): ordered sections first in
+  // that order; anything not in the order stays in its default position after (stable sort).
+  const order = prefs.topic_order ?? [];
+  if (order.length > 0) {
+    const rank = new Map(order.map((k, i) => [k, i] as const));
+    capped.sort((a, b) => (rank.get(sectionKey(a)) ?? Infinity) - (rank.get(sectionKey(b)) ?? Infinity));
+  }
+  return capped;
 }
 
 /** Total candidate sections before the max_topics cap — for "showing N of M" messaging. */

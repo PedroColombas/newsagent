@@ -39,6 +39,8 @@ const prefs: Preferences = {
   context_depth: "quick",
   podcast_enabled: true,
   delivery_hour: 6,
+  walkthrough_seen: true,
+  topic_order: [],
   updated_at: "2026-06-21T00:00:00Z",
 };
 
