@@ -18,6 +18,7 @@ import { usePlayer } from "../player/PlayerProvider";
 import type { PlayerEpisode } from "../player/PlayerProvider";
 import { PlayIcon } from "../components/ui/icons";
 import { RecapCard } from "../components/RecapCard";
+import { Walkthrough } from "../components/Walkthrough";
 
 // If an on-demand generation hasn't landed in this long of FOREGROUND time (background time is
 // excluded — see the visibility handler), stop waiting and show an error + retry. Generous, since
@@ -27,7 +28,7 @@ const GEN_TIMEOUT_MS = 8 * 60 * 1000;
 export function Today() {
   const { user } = useAuth();
   const { report, episode, loading, refetch } = useLatestReport();
-  const { prefs } = usePreferences();
+  const { prefs, update } = usePreferences();
   const { play } = usePlayer();
   const navigate = useNavigate();
 
@@ -193,6 +194,7 @@ export function Today() {
       {playable ? (
         <button
           onClick={() => void play(playable)}
+          data-tour="podcast"
           className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3 text-left"
         >
           <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[var(--accent)] text-[var(--on-accent)] shadow-[0_3px_9px_rgba(192,81,43,0.34)]">
@@ -214,7 +216,10 @@ export function Today() {
           </span>
         </button>
       ) : podcastPending ? (
-        <div className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3">
+        <div
+          data-tour="podcast"
+          className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3"
+        >
           <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[var(--accent)]/12">
             <span className="flex h-4 items-end gap-[2px]">
               {[0, 1, 2].map((i) => (
@@ -261,6 +266,11 @@ export function Today() {
           </button>
         ))}
       </div>
+
+      {/* First-run coach marks — fire once the first brief is on screen (real elements to point at). */}
+      {prefs && !prefs.walkthrough_seen && (
+        <Walkthrough onFinish={() => update({ walkthrough_seen: true })} />
+      )}
     </section>
   );
 }

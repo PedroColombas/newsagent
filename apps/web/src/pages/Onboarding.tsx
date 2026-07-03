@@ -10,6 +10,7 @@ import { SubtopicPicker } from "../components/preferences/SubtopicPicker";
 import { CustomInterestsEditor } from "../components/preferences/CustomInterestsEditor";
 import { ReportStyleControls } from "../components/preferences/ReportStyleControls";
 import { Toggle } from "../components/ui/Toggle";
+import { WelcomeCarousel } from "../components/WelcomeCarousel";
 
 const STEPS = [
   { title: "Pick your genres", subtitle: "The broad areas you want covered — up to five." },
@@ -31,8 +32,12 @@ export function Onboarding({
   onDone: () => void;
 }) {
   const navigate = useNavigate();
+  const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const total = STEPS.length;
+
+  // Trailer first — set the scene before the config wizard.
+  if (!started) return <WelcomeCarousel onDone={() => setStarted(true)} />;
 
   function finish(to: string) {
     onDone();

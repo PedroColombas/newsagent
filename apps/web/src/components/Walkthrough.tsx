@@ -1,52 +1,51 @@
 import { useLayoutEffect, useState } from "react";
 import type { CSSProperties } from "react";
-import { useLocation } from "react-router-dom";
+import { createPortal } from "react-dom";
 
-// First-run coach marks. A dimmed overlay with a spotlight "hole" over a real element (via a big
-// box-shadow) + a card that describes it. Only the nav tabs and the Generate button exist on a
-// brand-new user's Today, so those are the spotlight targets; the copy covers the deeper features.
+// First-run coach marks, shown once the user's FIRST brief has landed (so the real elements —
+// the podcast card, the nav — are on screen to point at). A dimmed overlay with a spotlight
+// "hole" over a real element (a big box-shadow) + a card. Portaled to <body> so the fixed overlay
+// isn't trapped by the page-transition transforms on the routed content.
 interface Step {
   target: string | null; // querySelector for the element to spotlight, or null for a centered card
   title: string;
   body: string;
 }
 
+// Ordered to flow left-to-right along the bottom nav: podcast (on Today) → History → Preferences.
 const STEPS: Step[] = [
   {
     target: null,
-    title: "Welcome to Daily Brief",
-    body: "A fresh, personalised news brief every morning — written for you. Here's the quick tour.",
+    title: "Your first brief is here",
+    body: "Nice — here's your personalised briefing. A quick tour of what else it does.",
   },
   {
-    target: '[data-tour="prefs"]',
-    title: "Shape what you read",
-    body: "Genres, subtopics, your own interests, the writing style, and when it lands — all in Preferences. This is the heart of it.",
+    target: '[data-tour="podcast"]',
+    title: "Listen, don't just read",
+    body: "Every brief comes as a conversational podcast. Tap here to play — expand it for chapters and speed.",
   },
   {
     target: '[data-tour="history"]',
     title: "Never fall behind",
-    body: "Every past brief lives in History. Away a few days? Your next brief opens with a “While you were away” catch-up.",
+    body: "Past briefs live in History. Away a few days? Your next one opens with a “While you were away” catch-up.",
   },
   {
-    target: '[data-tour="generate"]',
-    title: "Get your first brief",
-    body: "It arrives tomorrow at your delivery time — or tap here to generate one now. Each brief comes as a conversational podcast too.",
+    target: '[data-tour="prefs"]',
+    title: "Shape what you read",
+    body: "Genres, your own interests, the writing style, and when it lands — all in Preferences. This is the heart of it.",
   },
 ];
 
 const PAD = 8; // spotlight padding around the target
 
 export function Walkthrough({ onFinish }: { onFinish: () => void }) {
-  const location = useLocation();
   const [i, setI] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
-
-  const onToday = location.pathname === "/";
   const step = STEPS[i];
 
   // Measure the current target after layout, and on resize.
   useLayoutEffect(() => {
-    if (!onToday || !step.target) {
+    if (!step.target) {
       setRect(null);
       return;
     }
@@ -57,9 +56,7 @@ export function Walkthrough({ onFinish }: { onFinish: () => void }) {
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [onToday, step.target]);
-
-  if (!onToday) return null;
+  }, [step.target]);
 
   const last = i === STEPS.length - 1;
   const next = () => (last ? onFinish() : setI((n) => n + 1));
@@ -73,25 +70,26 @@ export function Walkthrough({ onFinish }: { onFinish: () => void }) {
   // target or below a top-half one.
   const vStyle: CSSProperties = {};
   if (rect) {
-    if (rect.top > window.innerHeight * 0.55) vStyle.bottom = window.innerHeight - rect.top + 14;
-    else vStyle.top = rect.bottom + 14;
+    if (rect.top > window.innerHeight * 0.55) vStyle.bottom = window.innerHeight - rect.top + 16;
+    else vStyle.top = rect.bottom + 16;
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[70]">
       {spot ? (
         <div
-          className="pointer-events-none absolute rounded-2xl ring-2 ring-[var(--accent)] transition-all duration-300"
+          className="pointer-events-none absolute rounded-2xl transition-all duration-300"
           style={{
             left: spot.left,
             top: spot.top,
             width: spot.width,
             height: spot.height,
-            boxShadow: "0 0 0 9999px rgba(18,14,9,0.74)",
+            // A bold accent ring on the lit element, then the dim beyond it.
+            boxShadow: "0 0 0 3px var(--accent), 0 0 0 9999px rgba(18,14,9,0.76)",
           }}
         />
       ) : (
-        <div className="absolute inset-0 bg-[rgba(18,14,9,0.74)]" />
+        <div className="absolute inset-0 bg-[rgba(18,14,9,0.76)]" />
       )}
 
       <div
@@ -132,6 +130,7 @@ export function Walkthrough({ onFinish }: { onFinish: () => void }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
