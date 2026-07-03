@@ -30,6 +30,40 @@ export const fetchNews = task({
     const { userId, date } = payload;
 
     try {
+      // If today's brief is already complete (a duplicate click, a Trigger retry, or the daily
+      // cron after an on-demand run), don't redo the work or downgrade the finished report.
+      const { data: current } = await supabase()
+        .from("reports")
+        .select("status")
+        .eq("user_id", userId)
+        .eq("date", date)
+        .maybeSingle();
+      if (current?.status === "complete") {
+        logger.info("report already complete — skipping fetch", { userId, date });
+        return { userId, date, skipped: true };
+      }
+
+      // Claim the reports row and mark it generating up front, so the app shows the compiling
+      // state immediately and it SURVIVES A RELOAD. (Previously the row appeared only once
+      // generate-report ran — i.e. after the whole Perplexity stage — leaving a multi-minute gap
+      // where a reload saw no row and fell back to the "Generate" button, letting the user
+      // re-trigger a duplicate run.)
+      await supabase()
+        .from("reports")
+        .upsert(
+          {
+            user_id: userId,
+            date,
+            status: "generating",
+            error_message: null,
+            // Stamp when THIS generation started. created_at is otherwise only set on insert, so a
+            // reclaimed row (e.g. retrying a hours-old failed brief) would keep a stale time and the
+            // app's reload timeout + failed-vs-stale checks would misfire.
+            created_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,date" },
+        );
+
       const { data, error } = await supabase()
         .from("preferences")
         .select("*")

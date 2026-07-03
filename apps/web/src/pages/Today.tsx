@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { useLatestReport } from "../hooks/useLatestReport";
 import { usePreferences } from "../hooks/usePreferences";
 import { requestTodayBrief } from "../lib/api";
+import { markPending, readPending, clearPending } from "../lib/pending-generation";
 import { formatDeliveryHour } from "../lib/delivery-time";
 import {
   formatReportDate,
@@ -30,13 +31,35 @@ export function Today() {
   const { play } = usePlayer();
   const navigate = useNavigate();
 
-  const [generating, setGenerating] = useState(false);
+  // Initialise from the reload bridge: if an on-demand generation was just kicked off (record still
+  // fresh), resume the compiling state even though React state was lost on reload. Read once.
+  const bridge = useMemo(() => readPending(), []);
+  const [generating, setGenerating] = useState<boolean>(bridge != null);
   const [genError, setGenError] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
-  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [startedAt, setStartedAt] = useState<number | null>(bridge?.at ?? null);
+  // created_at of the report we superseded when we kicked off — lets us tell this run's failure
+  // apart from a stale one (server-vs-server, immune to clock skew and the visibility bump).
+  const [baseline, setBaseline] = useState<string | null>(bridge?.baseline ?? null);
 
   const waiting =
     generating || report?.status === "pending" || report?.status === "generating";
+
+  // Timeout is measured from the local click; after a reload where only the reports row survives,
+  // fall back to when that row started generating so the timeout still applies.
+  const reportStart =
+    (report?.status === "generating" || report?.status === "pending") && report?.created_at
+      ? Date.parse(report.created_at)
+      : null;
+  const effectiveStart = startedAt ?? reportStart;
+
+  // A failed report is THIS run's failure only once fetch-news (re)claimed its row — i.e. once its
+  // created_at differs from the row we superseded. When we're not mid-generation (startedAt null)
+  // any failed row is the failure to show; while a retry is in flight a stale failed row (created_at
+  // still == baseline) is ignored until the run claims it.
+  const failedIsCurrent =
+    report?.status === "failed" &&
+    (startedAt == null || report.created_at !== baseline);
 
   // The podcast is generated after the report completes, so the audio lags the brief. Show a
   // loading state (and keep polling) while it's on its way.
@@ -50,6 +73,17 @@ export function Today() {
     if (report?.status === "complete") setGenerating(false);
   }, [report?.status]);
 
+  // Once the reports row reflects THIS run it drives the compiling state, so retire the bridge flag
+  // — but not on a stale 'failed' row, so the bridge survives a retry until the run claims it.
+  useEffect(() => {
+    if (report && report.status !== "failed") clearPending();
+  }, [report]);
+
+  // Stop treating a run as in-progress once its own failure surfaces (also stops polling).
+  useEffect(() => {
+    if (failedIsCurrent) setGenerating(false);
+  }, [failedIsCurrent]);
+
   // Poll while a brief is compiling, or while its podcast is still being generated.
   useEffect(() => {
     if (!waiting && !podcastPending) return;
@@ -59,15 +93,15 @@ export function Today() {
 
   // Safety net: if a generation never lands, stop waiting and surface an error.
   useEffect(() => {
-    if (!waiting || startedAt == null) return;
-    const remaining = GEN_TIMEOUT_MS - (Date.now() - startedAt);
+    if (!waiting || effectiveStart == null) return;
+    const remaining = GEN_TIMEOUT_MS - (Date.now() - effectiveStart);
     if (remaining <= 0) {
       setTimedOut(true);
       return;
     }
     const t = setTimeout(() => setTimedOut(true), remaining);
     return () => clearTimeout(t);
-  }, [waiting, startedAt]);
+  }, [waiting, effectiveStart]);
 
   // Returning from background (tab hidden / phone locked) leaves timers frozen and state stale.
   // Re-poll and restart the timeout window so background time isn't counted as "stalled".
@@ -84,15 +118,19 @@ export function Today() {
   }, [waiting, refetch]);
 
   async function generateNow() {
+    const baselineCreatedAt = report?.created_at ?? null;
     setGenError(false);
     setTimedOut(false);
     setStartedAt(Date.now());
+    setBaseline(baselineCreatedAt);
     setGenerating(true);
+    markPending(baselineCreatedAt);
     try {
       await requestTodayBrief();
     } catch {
       setGenerating(false);
       setGenError(true);
+      clearPending();
     }
   }
 
@@ -100,8 +138,8 @@ export function Today() {
     return <Centered>Loading your brief…</Centered>;
   }
 
-  // A trigger error, a failed run, or a stalled generation → error with retry (never a silent hang).
-  if (genError || (timedOut && waiting) || (report?.status === "failed" && !generating)) {
+  // A trigger error, this run's own failure, or a stalled generation → error with retry (no hang).
+  if (genError || (timedOut && waiting) || failedIsCurrent) {
     const message = report?.status === "failed" ? report.error_message : undefined;
     return <GenerateError onRetry={generateNow} message={message} />;
   }
