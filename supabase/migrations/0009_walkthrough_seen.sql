@@ -8,7 +8,8 @@
 -- ============================================================
 
 alter table public.preferences
-  add column walkthrough_seen boolean not null default false;
+  add column if not exists walkthrough_seen boolean not null default false;
 
--- Existing users already know the app — don't show them the intro.
+-- Existing users already know the app — don't show them the intro. (One-time backfill: run before
+-- any fresh test account is created, since it marks EVERY current row seen.)
 update public.preferences set walkthrough_seen = true;
