@@ -14,7 +14,9 @@ import { elevenSynthesizeDialogue, ELEVEN_MODEL, type ElevenVoice } from "./elev
 export type { DialogueTurn };
 
 type TtsProvider = "elevenlabs" | "openai";
-const TTS_PROVIDER: TtsProvider = "elevenlabs";
+// Reverted to OpenAI — gpt-4o-mini-tts felt more natural here than ElevenLabs (v3 included), and
+// it's far cheaper. The ElevenLabs path is kept intact; flip back to "elevenlabs" to re-enable.
+const TTS_PROVIDER: TtsProvider = "openai";
 
 // ── Casts: role → voice, per provider. The single place to tune the podcast's voices. ──
 
@@ -22,14 +24,16 @@ const OPENAI_CAST: Record<string, SpeechOptions> = {
   host: {
     voice: "nova",
     instructions:
-      "A warm, curious podcast host interviewing an expert. Friendly and engaged, " +
-      "natural pace, guiding the conversation for the listener.",
+      "A warm, curious podcast host chatting with an expert. Relaxed and genuinely engaged, " +
+      "with natural intonation and an easy, unhurried pace — like a real person talking, not " +
+      "reading aloud. Let reactions and questions sound spontaneous.",
   },
   expert: {
     voice: "onyx",
     instructions:
-      "A knowledgeable analyst being interviewed. Explains clearly and conversationally " +
-      "at a measured pace, like a sharp guest on a quality news podcast.",
+      "A sharp, personable analyst being interviewed. Explains things clearly and " +
+      "conversationally, like talking to a curious friend — relaxed pace, natural emphasis, " +
+      "warm rather than formal or newsreader-like.",
   },
 };
 

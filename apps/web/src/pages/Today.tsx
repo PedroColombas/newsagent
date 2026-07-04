@@ -258,7 +258,9 @@ export function Today() {
               )}
             </div>
             <h2 className="text-[20px] font-semibold leading-snug tracking-tight">{s.topic}</h2>
-            <p className="text-[15px] leading-relaxed text-[var(--ink)]/85">{snippet(s.summary)}</p>
+            <p className="hyphens-auto text-justify text-[15px] leading-relaxed text-[var(--ink)]/85">
+              {snippet(s.summary)}
+            </p>
             {s.sources.length > 0 && (
               <span className="text-[12.5px] text-[var(--faint)]">
                 {s.sources.length} {s.sources.length === 1 ? "source" : "sources"}
