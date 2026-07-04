@@ -29,11 +29,13 @@ const OPENAI_CAST: Record<string, SpeechOptions> = {
       "reading aloud. Let reactions and questions sound spontaneous.",
   },
   expert: {
-    voice: "onyx",
+    // "ash" is brighter and less deep than "onyx", which read heavy/monotone. Easy to swap —
+    // other lively male options: "verse", "ballad", "echo".
+    voice: "ash",
     instructions:
-      "A sharp, personable analyst being interviewed. Explains things clearly and " +
-      "conversationally, like talking to a curious friend — relaxed pace, natural emphasis, " +
-      "warm rather than formal or newsreader-like.",
+      "A sharp, personable analyst being interviewed. Bright, upbeat and animated — real energy " +
+      "and varied intonation, never flat, heavy, or monotone. Explains things conversationally, " +
+      "like an enthusiastic friend who genuinely finds this interesting; keep it light on its feet.",
   },
 };
 
