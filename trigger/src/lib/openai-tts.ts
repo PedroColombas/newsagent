@@ -69,7 +69,8 @@ export async function synthesizeDialogue(
 }
 
 // Split into <=maxChars chunks on sentence boundaries; hard-split any oversized sentence.
-function chunkText(text: string, maxChars: number): string[] {
+// Exported so other TTS providers (elevenlabs-tts) can reuse the same segmentation.
+export function chunkText(text: string, maxChars: number): string[] {
   const sentences = text.match(/[^.!?]+[.!?]+\s*|[^.!?]+$/g) ?? [text];
   const chunks: string[] = [];
   let current = "";

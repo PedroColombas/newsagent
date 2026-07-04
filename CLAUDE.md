@@ -31,7 +31,7 @@ not an afterthought.
 | Scheduling / orchestration | Trigger.dev |
 | News fetching | **Perplexity API** (`sonar-pro`) — chosen over NewsAPI for richer synthesised inputs and no scraping layer |
 | Report generation + podcast script | Anthropic API (Claude) |
-| Text-to-speech | OpenAI TTS for MVP; ElevenLabs as v2 upgrade path |
+| Text-to-speech | ElevenLabs (`eleven_multilingual_v2`) as the quality path, with **automatic OpenAI TTS fallback**. Provider chosen in `trigger/src/lib/tts.ts` (facade); voices/casts are config constants there |
 | Email delivery | Composio + Gmail — DEPRIORITISED, not in MVP |
 | Auth | Supabase Auth, multi-user. Magic link + optional Google OAuth |
 
@@ -129,7 +129,8 @@ mode/voice segmented controls. The most important screen — it IS the product.
   shipped to client). Frontend uses the **anon** key.
 - Secrets via env vars — never hardcode. Expected:
   `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
-  `ANTHROPIC_API_KEY`, `PERPLEXITY_API_KEY`, `OPENAI_API_KEY`.
+  `ANTHROPIC_API_KEY`, `PERPLEXITY_API_KEY`, `OPENAI_API_KEY`,
+  `ELEVENLABS_API_KEY` (optional — enables the ElevenLabs voice path; falls back to OpenAI TTS if unset).
 - Mobile-first CSS always — single column, bottom nav, thumb-zone actions.
 - `delivery_hour` is UTC in the DB; convert to/from local time in the UI.
 - When adding a pipeline step, make it idempotent and safe to retry (Trigger.dev

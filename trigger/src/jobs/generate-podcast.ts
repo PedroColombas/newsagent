@@ -2,27 +2,10 @@ import { task, logger } from "@trigger.dev/sdk";
 import { supabase } from "../lib/supabase";
 import { withDiagnostics } from "../lib/diagnostics";
 import { writeScript } from "../lib/podcast-script";
-import { synthesizeDialogue, type DialogueTurn, type SpeechOptions } from "../lib/openai-tts";
+import { synthesizeDialogue, type DialogueTurn } from "../lib/tts";
 import type { ReportContent } from "@shared/types";
 
 const AUDIO_BUCKET = "podcast-audio";
-
-// Two-voice interview cast. Voices + delivery are tunable constants (not user-facing yet).
-// gpt-4o-mini-tts steers tone via `instructions`, so the personas do most of the work.
-const SPEAKERS: Record<string, SpeechOptions> = {
-  host: {
-    voice: "nova",
-    instructions:
-      "A warm, curious podcast host interviewing an expert. Friendly and engaged, " +
-      "natural pace, guiding the conversation for the listener.",
-  },
-  expert: {
-    voice: "onyx",
-    instructions:
-      "A knowledgeable analyst being interviewed. Explains clearly and conversationally " +
-      "at a measured pace, like a sharp guest on a quality news podcast.",
-  },
-};
 
 export const generatePodcast = task({
   id: "generate-podcast",
@@ -82,7 +65,8 @@ export const generatePodcast = task({
       const chapters = computeChapters(turns, sections);
 
       // 2. Synthesise each turn in its speaker's voice; concatenate the segments in order.
-      const audio = await withDiagnostics("tts", () => synthesizeDialogue(turns, SPEAKERS));
+      //    (ElevenLabs when configured, else OpenAI — the tts facade picks + falls back.)
+      const audio = await withDiagnostics("tts", () => synthesizeDialogue(turns));
 
       // 3. Upload to the private bucket, namespaced by user (service_role bypasses storage
       //    RLS). `audio_url` stores the PATH, not a URL — see schema + 0003_storage.sql.
