@@ -5,7 +5,7 @@ import {
   type DialogueTurn,
   type SpeechOptions,
 } from "./openai-tts";
-import { elevenSynthesizeDialogue, type ElevenVoice } from "./elevenlabs-tts";
+import { elevenSynthesizeDialogue, ELEVEN_MODEL, type ElevenVoice } from "./elevenlabs-tts";
 
 // Podcast narration engine. ElevenLabs (multilingual_v2) is the quality path; OpenAI is the
 // fallback, used automatically when the ElevenLabs key is absent or a call fails — so the daily
@@ -36,14 +36,16 @@ const OPENAI_CAST: Record<string, SpeechOptions> = {
 // Female host + male expert (owner-chosen voices). To change, swap either voiceId with any voice
 // from your ElevenLabs dashboard (Voices → ⋯ → "Copy voice ID"). If an id is invalid the call
 // throws and we fall back to OpenAI, so podcasts keep working meanwhile.
+// stability is 0.5 because eleven_v3 only accepts 0 / 0.5 / 1 (0=Creative, 0.5=Natural, 1=Robust);
+// 0.5 is also valid for multilingual/flash, so it's safe across models.
 const ELEVEN_CAST: Record<string, ElevenVoice> = {
   host: {
     voiceId: "AZLM4CsYOQDuqgTHYzxW", // female host
-    settings: { stability: 0.4, similarity_boost: 0.75, use_speaker_boost: true },
+    settings: { stability: 0.5, similarity_boost: 0.75, use_speaker_boost: true },
   },
   expert: {
     voiceId: "fvVBPXuE7f1iX3dZLKFy", // male expert
-    settings: { stability: 0.55, similarity_boost: 0.75, use_speaker_boost: true },
+    settings: { stability: 0.5, similarity_boost: 0.75, use_speaker_boost: true },
   },
 };
 
@@ -53,12 +55,16 @@ export async function synthesizeDialogue(turns: DialogueTurn[]): Promise<Buffer>
   const useEleven = TTS_PROVIDER === "elevenlabs" && !!optionalEnv("ELEVENLABS_API_KEY");
   if (useEleven) {
     try {
-      return await elevenSynthesizeDialogue(turns, ELEVEN_CAST);
+      const audio = await elevenSynthesizeDialogue(turns, ELEVEN_CAST);
+      // So the run log clearly states which engine + model actually narrated (verifiable, no guessing).
+      logger.info(`TTS narrated via ElevenLabs (${ELEVEN_MODEL})`);
+      return audio;
     } catch (err) {
       logger.warn("ElevenLabs TTS failed — falling back to OpenAI", {
         error: String((err as { message?: string })?.message ?? err),
       });
     }
   }
+  logger.info("TTS narrated via OpenAI");
   return openaiSynthesizeDialogue(turns, OPENAI_CAST);
 }

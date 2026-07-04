@@ -7,16 +7,18 @@ import { chunkText, type DialogueTurn } from "./openai-tts";
 
 const API_BASE = "https://api.elevenlabs.io/v1/text-to-speech";
 
-// Fast, half-credit model (0.5×) — a small step down from multilingual_v2 in richness. Tunable;
-// swap to "eleven_multilingual_v2" (quality) or "eleven_v3" (most expressive) to compare.
-export const ELEVEN_MODEL = "eleven_flash_v2_5";
+// ElevenLabs' most expressive, lifelike model — best for interview dialogue. Tunable; swap to
+// "eleven_multilingual_v2" (quality) or "eleven_flash_v2_5" (fast/half-cost) to compare. Note:
+// v3's `stability` only takes 0 / 0.5 / 1 — the cast uses 0.5 (see tts.ts).
+export const ELEVEN_MODEL = "eleven_v3";
 
 // 128 kbps mp3 at 44.1 kHz — available on every plan tier; matches the OpenAI output.
 const OUTPUT_FORMAT = "mp3_44100_128";
 
-// multilingual_v2 allows up to ~10k chars/request; we chunk conservatively so concatenated
-// mp3 segments join cleanly (turns are usually short, so most never split).
-const MAX_CHARS = 4000;
+// Chunk conservatively so concatenated mp3 segments join cleanly and we stay within the smallest
+// model's per-request limit (eleven_v3 is lower than multilingual_v2). Turns are usually short, so
+// most never split.
+const MAX_CHARS = 3000;
 
 export interface ElevenVoiceSettings {
   stability?: number; // lower = more expressive/variable, higher = steadier
