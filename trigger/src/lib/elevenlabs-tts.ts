@@ -20,6 +20,11 @@ const OUTPUT_FORMAT = "mp3_44100_128";
 // most never split.
 const MAX_CHARS = 3000;
 
+// Synthesise turns in parallel, capped below ElevenLabs' per-plan concurrency limit (Creator = 5).
+// Sequential is too slow for the expressive models — a many-turn eleven_v3 episode blows the job's
+// maxDuration. If the cap is exceeded ElevenLabs 429s, which surfaces as a fallback to OpenAI.
+const TTS_CONCURRENCY = 4;
+
 export interface ElevenVoiceSettings {
   stability?: number; // lower = more expressive/variable, higher = steadier
   similarity_boost?: number; // adherence to the original voice
@@ -54,21 +59,45 @@ async function synthesizeOne(text: string, voice: ElevenVoice): Promise<Buffer> 
   return Buffer.from(await res.arrayBuffer());
 }
 
+// Run an async fn over items with a bounded number in flight, preserving input order in the results.
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  async function worker(): Promise<void> {
+    while (cursor < items.length) {
+      const i = cursor++;
+      results[i] = await fn(items[i]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, () => worker()));
+  return results;
+}
+
 // Synthesise a dialogue: each turn spoken in its speaker's voice, segments concatenated in order.
-// `cast` maps a speaker key ("host" / "expert") → voice. Throws on any failure so the caller can
-// fall back to another provider rather than shipping a half-empty episode.
+// `cast` maps a speaker key ("host" / "expert") → voice. Segments run in parallel (bounded) for
+// speed, then join in the original order. Throws on any failure so the caller can fall back to
+// another provider rather than shipping a half-empty episode.
 export async function elevenSynthesizeDialogue(
   turns: DialogueTurn[],
   cast: Record<string, ElevenVoice>,
 ): Promise<Buffer> {
-  const parts: Buffer[] = [];
+  // Flatten to ordered segments (a long turn splits into chunks; short turns stay whole).
+  const segments: { text: string; voice: ElevenVoice }[] = [];
   for (const turn of turns) {
     const voice = cast[turn.speaker];
     if (!voice || !turn.text.trim()) continue; // skip unknown speakers / empty turns
     for (const chunk of chunkText(turn.text, MAX_CHARS)) {
-      parts.push(await synthesizeOne(chunk, voice));
+      segments.push({ text: chunk, voice });
     }
   }
-  if (parts.length === 0) throw new Error("ElevenLabs produced no audio for this script");
+  if (segments.length === 0) throw new Error("ElevenLabs produced no audio for this script");
+
+  const parts = await mapWithConcurrency(segments, TTS_CONCURRENCY, (s) =>
+    synthesizeOne(s.text, s.voice),
+  );
   return Buffer.concat(parts);
 }

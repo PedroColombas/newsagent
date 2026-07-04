@@ -9,7 +9,9 @@ const AUDIO_BUCKET = "podcast-audio";
 
 export const generatePodcast = task({
   id: "generate-podcast",
-  maxDuration: 300,
+  // Headroom for the slower expressive TTS models (eleven_v3). Parallel synthesis keeps real time
+  // well under this; the bump is a safety margin so a long episode can't be killed mid-render.
+  maxDuration: 600,
   run: async (payload: { reportId: string; force?: boolean }) => {
     const { reportId, force } = payload;
     const db = supabase();
