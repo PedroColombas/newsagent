@@ -7,8 +7,9 @@ import { chunkText, type DialogueTurn } from "./openai-tts";
 
 const API_BASE = "https://api.elevenlabs.io/v1/text-to-speech";
 
-// Highest-quality, most lifelike model — ElevenLabs' own pick for narration. Tunable.
-export const ELEVEN_MODEL = "eleven_multilingual_v2";
+// Fast, half-credit model (0.5×) — a small step down from multilingual_v2 in richness. Tunable;
+// swap to "eleven_multilingual_v2" (quality) or "eleven_v3" (most expressive) to compare.
+export const ELEVEN_MODEL = "eleven_flash_v2_5";
 
 // 128 kbps mp3 at 44.1 kHz — available on every plan tier; matches the OpenAI output.
 const OUTPUT_FORMAT = "mp3_44100_128";
