@@ -33,16 +33,16 @@ const OPENAI_CAST: Record<string, SpeechOptions> = {
   },
 };
 
-// Female host + male expert. These are ElevenLabs premade voices — audition the first episode and
-// swap either voiceId with any voice from your dashboard (Voices → ⋯ → "Copy voice ID"). If an id
-// is invalid the call throws and we fall back to OpenAI, so podcasts keep working meanwhile.
+// Female host + male expert (owner-chosen voices). To change, swap either voiceId with any voice
+// from your ElevenLabs dashboard (Voices → ⋯ → "Copy voice ID"). If an id is invalid the call
+// throws and we fall back to OpenAI, so podcasts keep working meanwhile.
 const ELEVEN_CAST: Record<string, ElevenVoice> = {
   host: {
-    voiceId: "21m00Tcm4TlvDq8ikWAM", // Rachel — warm female narration
+    voiceId: "AZLM4CsYOQDuqgTHYzxW", // female host
     settings: { stability: 0.4, similarity_boost: 0.75, use_speaker_boost: true },
   },
   expert: {
-    voiceId: "pNInz6obpgDQGcFmaJgB", // Adam — steady male
+    voiceId: "fvVBPXuE7f1iX3dZLKFy", // male expert
     settings: { stability: 0.55, similarity_boost: 0.75, use_speaker_boost: true },
   },
 };
