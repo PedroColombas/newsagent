@@ -6,6 +6,7 @@ import {
   type SpeechOptions,
 } from "./openai-tts";
 import { elevenSynthesizeDialogue, ELEVEN_MODEL, type ElevenVoice } from "./elevenlabs-tts";
+import { introMp3 } from "./intro-audio";
 
 // Podcast narration engine. ElevenLabs (multilingual_v2) is the quality path; OpenAI is the
 // fallback, used automatically when the ElevenLabs key is absent or a call fails — so the daily
@@ -55,9 +56,9 @@ const ELEVEN_CAST: Record<string, ElevenVoice> = {
   },
 };
 
-// Narrate a two-person interview script to a single mp3. Tries ElevenLabs first (when enabled and
-// keyed), falls back to OpenAI on any failure.
-export async function synthesizeDialogue(turns: DialogueTurn[]): Promise<Buffer> {
+// Narrate a set of turns to a single voice track. Tries ElevenLabs first (when enabled and keyed),
+// falls back to OpenAI on any failure.
+async function narrate(turns: DialogueTurn[]): Promise<Buffer> {
   const useEleven = TTS_PROVIDER === "elevenlabs" && !!optionalEnv("ELEVENLABS_API_KEY");
   if (useEleven) {
     try {
@@ -73,4 +74,21 @@ export async function synthesizeDialogue(turns: DialogueTurn[]): Promise<Buffer>
   }
   logger.info("TTS narrated via OpenAI");
   return openaiSynthesizeDialogue(turns, OPENAI_CAST);
+}
+
+// Narrate the full episode with the branded intro sting: the host's opening (welcome + preview +
+// any recap), then the sting, then the rest of the conversation.
+// NOTE: this joins the sting's mp3 bytes directly onto the voice track. If it plays at the wrong
+// speed/pitch on any device (the sting's format differs from the TTS output), the fix is to
+// re-encode everything to a uniform stream via ffmpeg — heavier, so we try the direct join first.
+export async function synthesizeDialogue(turns: DialogueTurn[]): Promise<Buffer> {
+  if (turns.length === 0) return Buffer.alloc(0);
+
+  // The sting lands after the host's lead-in, right before the expert first speaks.
+  let split = turns.findIndex((t) => t.speaker === "expert");
+  if (split <= 0) split = 1; // no/immediate expert → after the first turn
+
+  const opening = await narrate(turns.slice(0, split));
+  const rest = split < turns.length ? await narrate(turns.slice(split)) : Buffer.alloc(0);
+  return Buffer.concat([opening, introMp3(), rest]);
 }
