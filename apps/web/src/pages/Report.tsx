@@ -14,7 +14,9 @@ import { RecapCard } from "../components/RecapCard";
 const TEXT_SIZES = ["text-[15px]", "text-[16.5px]", "text-[18px]"];
 
 const markdownComponents: Components = {
-  p: ({ children }) => <p className="mb-3 leading-relaxed text-[var(--ink)]/85">{children}</p>,
+  p: ({ children }) => (
+    <p className="mb-3 hyphens-auto text-justify leading-relaxed text-[var(--ink)]/85">{children}</p>
+  ),
   strong: ({ children }) => <strong className="font-semibold text-[var(--ink)]">{children}</strong>,
   em: ({ children }) => <em className="italic">{children}</em>,
   ul: ({ children }) => <ul className="mb-3 ml-4 list-disc space-y-1.5">{children}</ul>,
