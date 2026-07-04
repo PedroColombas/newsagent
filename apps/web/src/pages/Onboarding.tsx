@@ -19,7 +19,7 @@ const STEPS = [
     subtitle: "Subtopics within each genre, suggested from what's in the news now.",
   },
   { title: "Anything specific?", subtitle: "Add interests in your own words — optional." },
-  { title: "How should it read?", subtitle: "Shape the format, voice, and how new topics are introduced." },
+  { title: "How should it read?", subtitle: "Shape the format and voice of your brief." },
 ];
 
 export function Onboarding({
