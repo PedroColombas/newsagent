@@ -1,5 +1,4 @@
 import { useState } from "react";
-import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Preferences } from "@shared/types";
 import { planReportSections } from "@shared/plan-topics";
@@ -136,15 +135,46 @@ export function Onboarding({
   );
 }
 
-function PreviewTag({ children, accent = false }: { children: ReactNode; accent?: boolean }) {
+function MicIcon() {
   return (
-    <span
-      className={`rounded-full border px-3 py-1.5 text-[12px] font-medium ${
-        accent ? "border-[var(--accent)] text-[var(--accent)]" : "border-[var(--line)] text-[var(--muted)]"
-      }`}
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
     >
-      {children}
-    </span>
+      <rect x="9" y="2" width="6" height="11" rx="3" />
+      <path d="M5 10v1a7 7 0 0 0 14 0v-1M12 18v3" />
+    </svg>
+  );
+}
+
+// One labelled line in the edition spec — LABEL over "Value · what it means", so a first-time user
+// sees what each choice actually is (not just the bare value).
+function SpecRow({
+  label,
+  value,
+  hint,
+  divided,
+}: {
+  label: string;
+  value?: string;
+  hint?: string;
+  divided?: boolean;
+}) {
+  return (
+    <div className={`px-4 py-3 ${divided ? "border-t border-[var(--line)]" : ""}`}>
+      <span className="text-[10px] font-bold uppercase tracking-[1.1px] text-[var(--faint)]">{label}</span>
+      <p className="mt-0.5 text-[13.5px] leading-snug">
+        <span className="font-semibold text-[var(--ink)]">{value}</span>
+        {hint && <span className="text-[var(--muted)]"> · {hint}</span>}
+      </p>
+    </div>
   );
 }
 
@@ -159,8 +189,8 @@ function EditionPreview({
   onBack: () => void;
   onStart: () => void;
 }) {
-  const modeLabel = REPORT_MODES.find((m) => m.value === prefs.report_mode)?.label;
-  const voiceLabel = VOICES.find((v) => v.value === prefs.voice)?.label;
+  const mode = REPORT_MODES.find((m) => m.value === prefs.report_mode);
+  const voice = VOICES.find((v) => v.value === prefs.voice);
   const sections = planReportSections(prefs);
 
   return (
@@ -171,10 +201,35 @@ function EditionPreview({
         <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--muted)]">
           Your brief will run {sections.length} {sections.length === 1 ? "section" : "sections"}. Drag to reorder.
         </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {modeLabel && <PreviewTag>{modeLabel}</PreviewTag>}
-          {voiceLabel && <PreviewTag>{voiceLabel}</PreviewTag>}
-          {prefs.podcast_enabled && <PreviewTag accent>Podcast</PreviewTag>}
+        <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
+          <SpecRow label="Format" value={mode?.label} hint={mode?.hint} />
+          <SpecRow label="Tone" value={voice?.label} hint={voice?.hint} divided />
+          {/* Podcast — a live on/off toggle (last chance to enable before the first brief) */}
+          <div className="flex items-center justify-between gap-3 border-t border-[var(--line)] px-4 py-3">
+            <div className="flex items-center gap-2.5">
+              <span
+                className={`flex h-8 w-8 flex-none items-center justify-center rounded-full ${
+                  prefs.podcast_enabled
+                    ? "bg-[var(--accent)]/12 text-[var(--accent)]"
+                    : "bg-[var(--line)]/60 text-[var(--faint)]"
+                }`}
+              >
+                <MicIcon />
+              </span>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-[1.1px] text-[var(--faint)]">
+                  Podcast
+                </span>
+                <span className="text-[13.5px] font-semibold text-[var(--ink)]">
+                  {prefs.podcast_enabled ? "On · daily audio version" : "Off · text only"}
+                </span>
+              </div>
+            </div>
+            <Toggle
+              checked={prefs.podcast_enabled}
+              onChange={(podcast_enabled) => update({ podcast_enabled })}
+            />
+          </div>
         </div>
       </div>
 
