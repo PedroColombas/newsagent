@@ -31,14 +31,19 @@ not an afterthought.
 | Scheduling / orchestration | Trigger.dev |
 | News fetching | **Perplexity API** (`sonar-pro`) — chosen over NewsAPI for richer synthesised inputs and no scraping layer |
 | Report generation + podcast script | Anthropic API (Claude) |
-| Text-to-speech | ElevenLabs (`eleven_multilingual_v2`) as the quality path, with **automatic OpenAI TTS fallback**. Provider chosen in `trigger/src/lib/tts.ts` (facade); voices/casts are config constants there |
+| Text-to-speech | **OpenAI `gpt-4o-mini-tts`** (only). ElevenLabs trialled + dropped; dormant code kept behind a flag in `trigger/src/lib/tts.ts`. Podcast audio is assembled through ffmpeg (uniform re-encode) |
 | Email delivery | Composio + Gmail — DEPRIORITISED, not in MVP |
 | Auth | Supabase Auth, multi-user. Magic link + optional Google OAuth |
 
 ## Key product decisions (already made)
 
 - **Multi-user** from day one, Supabase Auth, RLS on every table.
-- **Cron only** for MVP — no on-demand "generate now" button yet.
+- **Weekday cadence** — automatic briefs Mon–Fri only; Monday's brief sweeps up the weekend
+  (wider news window). No Sat/Sun auto-briefs. On-demand "generate now" exists and works any day.
+- **Text-to-speech: OpenAI only** (`gpt-4o-mini-tts`). ElevenLabs was trialled and dropped (not
+  worth the cost); its code path is kept dormant in `trigger/src/lib/tts.ts` behind a flag.
+- **Synthesis model routes by report mode** — Sonnet 4.6 for briefing/standard, Opus 4.8 for
+  deep_dive (`MODELS.synthesis` / `synthesisDeepDive`).
 - Audio stored in **Supabase Storage**, private bucket, namespaced
   `podcast-audio/{user_id}/{report_id}.mp3`.
 - **One Perplexity query per topic** (not one composite). This determines report
