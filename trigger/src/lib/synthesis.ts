@@ -10,7 +10,8 @@ import type { FetchedTopic } from "../jobs/fetch-news";
 //     filter. Those specs live in the static system prompt below (cache-friendly).
 //   • Claude tags each section with the index of the fetched topic it's based on; we
 //     re-attach the real sources/level/timeframe in code, so URLs are never invented.
-//   • Model: Opus 4.8 (quality-first). Tunable via MODELS.synthesis in lib/anthropic.
+//   • Model routes by mode: Sonnet for briefing/standard, Opus for deep_dive. Tunable via
+//     MODELS.synthesis / MODELS.synthesisDeepDive in lib/anthropic.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Static — identical for every user + run, so it sits in `system` with cache_control.
@@ -100,8 +101,11 @@ export async function synthesize(
     `${JSON.stringify(topicsForModel)}\n\n` +
     "Write the report now.";
 
+  // Route by mode: Opus's depth only where it earns its cost (deep_dive), else Sonnet.
+  const model = prefs.report_mode === "deep_dive" ? MODELS.synthesisDeepDive : MODELS.synthesis;
+
   const message = await anthropic().messages.create({
-    model: MODELS.synthesis,
+    model,
     max_tokens: 12000,
     thinking: { type: "adaptive" },
     output_config: {

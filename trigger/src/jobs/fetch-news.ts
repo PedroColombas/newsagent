@@ -26,8 +26,8 @@ export interface FetchedTopic extends TopicQuery {
 export const fetchNews = task({
   id: "fetch-news",
   maxDuration: 300,
-  run: async (payload: { userId: string; date: string; force?: boolean }) => {
-    const { userId, date, force } = payload;
+  run: async (payload: { userId: string; date: string; force?: boolean; weekendCatchup?: boolean }) => {
+    const { userId, date, force, weekendCatchup } = payload;
 
     try {
       // If today's brief is already complete (a duplicate click, a Trigger retry, or the daily
@@ -82,7 +82,7 @@ export const fetchNews = task({
         .eq("user_id", userId);
       const briefed = new Set((history ?? []).map((h) => h.topic_key as string));
 
-      const topics = await buildTopicQueries(prefs, briefed);
+      const topics = await buildTopicQueries(prefs, briefed, !!weekendCatchup);
       logger.info("resolved topic queries", {
         userId,
         count: topics.length,
@@ -177,6 +177,17 @@ function editorialQuery(topic: string, recency: Recency): string {
 
 const DAILY_WINDOW: Recency = "day"; // latest news for an already-followed topic
 const PRIMER_WINDOW: Recency = "month"; // wider window for a first-time catch-up primer
+const WEEKEND_WINDOW: Recency = "week"; // Monday brief — wide enough to reach back over the weekend
+
+// Monday's brief covers the weekend + the gap since Friday's. "week" recency lets Perplexity reach
+// back far enough; the prompt keeps the focus on the last few days rather than the whole week.
+function weekendEditorialQuery(topic: string): string {
+  return (
+    `Summarise the most significant ${topic} developments from the past few days, including over ` +
+    "the weekend. For each story, give what happened, the key facts, and why it matters. " +
+    "Prioritise the most important and most recent developments."
+  );
+}
 
 // A first-time catch-up: background + state of the field, not just today's headlines.
 function primerQuery(topic: string): string {
@@ -195,7 +206,11 @@ function topicKey(p: PlannedTopic): string {
   return `genre:${p.topic}`;
 }
 
-async function buildTopicQueries(prefs: Preferences, briefed: Set<string>): Promise<TopicQuery[]> {
+async function buildTopicQueries(
+  prefs: Preferences,
+  briefed: Set<string>,
+  weekendCatchup: boolean,
+): Promise<TopicQuery[]> {
   // Which sections (and their order) is shared with the app's edition preview via
   // planReportSections, so the two never drift. Here we resolve each into a query.
   const out: TopicQuery[] = [];
@@ -207,14 +222,19 @@ async function buildTopicQueries(prefs: Preferences, briefed: Set<string>): Prom
     // L3 custom interests: sharpen the raw free-text into a clean search label.
     const topic =
       planned.level === 3 ? await resolveInterestTopic(planned.topic) : planned.topic;
-    const recency = isPrimer ? PRIMER_WINDOW : DAILY_WINDOW;
+    // Primer takes precedence; otherwise Monday's weekend sweep widens the window.
+    const recency = isPrimer ? PRIMER_WINDOW : weekendCatchup ? WEEKEND_WINDOW : DAILY_WINDOW;
 
     out.push({
       topic,
       level: planned.level,
       genre: planned.genre,
       recency,
-      query: isPrimer ? primerQuery(topic) : editorialQuery(topic, recency),
+      query: isPrimer
+        ? primerQuery(topic)
+        : weekendCatchup
+          ? weekendEditorialQuery(topic)
+          : editorialQuery(topic, recency),
       topicKey: key,
       isPrimer,
     });

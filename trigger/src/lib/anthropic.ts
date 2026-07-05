@@ -13,12 +13,14 @@ export function anthropic(): Anthropic {
 
 // Model choices are config constants so they're easy to tune (per CLAUDE.md):
 //  - cheap/fast model for Level-3 interest -> query translation
-//  - stronger model for report synthesis (report quality is the core product value)
+//  - synthesis ROUTES BY REPORT MODE: Sonnet for briefing/standard (fast, cheap, plenty capable),
+//    Opus only for deep_dive where the extra analytical depth earns its cost
 //  - mid-tier for the conversational podcast rewrite
 // IDs are current for this session; swap freely.
 export const MODELS = {
   queryTranslation: "claude-haiku-4-5-20251001",
-  synthesis: "claude-opus-4-8", // premium; "claude-sonnet-4-6" is the cheaper alternative
+  synthesis: "claude-sonnet-4-6", // default (briefing / standard)
+  synthesisDeepDive: "claude-opus-4-8", // deep_dive only — depth-first
   podcastScript: "claude-sonnet-4-6",
 } as const;
 
