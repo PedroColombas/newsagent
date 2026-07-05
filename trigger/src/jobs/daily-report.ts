@@ -21,7 +21,17 @@ export const dailyReport = schedules.task({
       logger.info("weekend — skipping automatic briefs", { hour, date, dow });
       return { hour, date, triggered: 0, weekend: true };
     }
-    const weekendCatchup = dow === 1; // Monday covers Fri-close → Mon-morning
+    // Trim the shared topic cache once a day — only the current date's rows are ever read, so older
+    // days are dead weight. Runs at the 00:00 UTC weekday tick; keeps ~2 days for late retries.
+    if (hour === 0) {
+      const cutoff = new Date(`${date}T00:00:00Z`);
+      cutoff.setUTCDate(cutoff.getUTCDate() - 2);
+      const { error: cleanupErr } = await supabase()
+        .from("topic_news_cache")
+        .delete()
+        .lt("date", cutoff.toISOString().slice(0, 10));
+      if (cleanupErr) logger.warn("topic cache cleanup failed", { error: cleanupErr.message });
+    }
 
     const { data, error } = await supabase()
       .from("preferences")
@@ -30,15 +40,16 @@ export const dailyReport = schedules.task({
     if (error) throw error;
 
     const users = data ?? [];
-    logger.info("daily-report tick", { hour, date, matchedUsers: users.length, weekendCatchup });
+    logger.info("daily-report tick", { hour, date, matchedUsers: users.length });
     if (users.length === 0) return { hour, date, triggered: 0 };
 
     // Fan out, fire-and-forget. Each user's chain runs and retries independently, so one
-    // user's failure never blocks another. batchTrigger handles up to 1,000 items.
+    // user's failure never blocks another. batchTrigger handles up to 1,000 items. Monday's
+    // weekend sweep is derived from the date inside fetch-news, so no per-run flag is needed.
     await fetchNews.batchTrigger(
-      users.map((u) => ({ payload: { userId: u.user_id as string, date, weekendCatchup } })),
+      users.map((u) => ({ payload: { userId: u.user_id as string, date } })),
     );
 
-    return { hour, date, triggered: users.length, weekendCatchup };
+    return { hour, date, triggered: users.length };
   },
 });

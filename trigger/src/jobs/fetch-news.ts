@@ -26,8 +26,8 @@ export interface FetchedTopic extends TopicQuery {
 export const fetchNews = task({
   id: "fetch-news",
   maxDuration: 300,
-  run: async (payload: { userId: string; date: string; force?: boolean; weekendCatchup?: boolean }) => {
-    const { userId, date, force, weekendCatchup } = payload;
+  run: async (payload: { userId: string; date: string; force?: boolean }) => {
+    const { userId, date, force } = payload;
 
     try {
       // If today's brief is already complete (a duplicate click, a Trigger retry, or the daily
@@ -82,24 +82,32 @@ export const fetchNews = task({
         .eq("user_id", userId);
       const briefed = new Set((history ?? []).map((h) => h.topic_key as string));
 
-      const topics = await buildTopicQueries(prefs, briefed, !!weekendCatchup);
+      // Monday's brief sweeps up the weekend (wider window). Derived from the brief DATE so the cron
+      // and on-demand paths always agree — and so the shared cache key (topic, date) fully determines
+      // the window (a payload flag would let callers disagree and cross-contaminate the cache).
+      const weekendCatchup = new Date(`${date}T00:00:00Z`).getUTCDay() === 1;
+      const topics = await buildTopicQueries(prefs, briefed, weekendCatchup);
       logger.info("resolved topic queries", {
         userId,
         count: topics.length,
         windows: topics.map((t) => `${t.topic}:${t.recency}${t.isPrimer ? ":primer" : ""}`),
       });
 
-      // One Perplexity query per topic. Sequential keeps us under rate limits; revisit with
-      // a small concurrency pool if it's too slow for users with many topics.
+      // One Perplexity query per topic. Canonical topics (genre/subtopic, non-primer) share one
+      // result per (topic, day) via topic_news_cache across ALL users and delivery hours; custom
+      // interests + first-time primers stay per-user. Sequential keeps us under rate limits.
       const fetched: FetchedTopic[] = [];
       for (const t of topics) {
-        const result = await withDiagnostics(`perplexity:${t.topic}`, () =>
-          perplexitySearch(t.query, {
-            recency: t.recency,
-            system: SYSTEM_PROMPT,
-            contextSize: t.isPrimer ? "high" : "medium",
-          }),
-        );
+        const shareable = (t.level === 1 || t.level === 2) && !t.isPrimer;
+        const result = shareable
+          ? await getCachedOrFetch(t, date)
+          : await withDiagnostics(`perplexity:${t.topic}`, () =>
+              perplexitySearch(t.query, {
+                recency: t.recency,
+                system: SYSTEM_PROMPT,
+                contextSize: t.isPrimer ? "high" : "medium",
+              }),
+            );
         fetched.push({ ...t, content: result.content, sources: result.sources });
       }
       logger.info("fetched all topics", { userId, count: fetched.length });
@@ -132,6 +140,43 @@ export const fetchNews = task({
     }
   },
 });
+
+// Shared per-(topic, day) Perplexity cache for canonical topics. Hit → reuse; miss → fetch once and
+// populate (ignoring conflicts if another user won the race). The shared-query cost saver: on a
+// topic followed by many users, all but the first reuse a single result. Only the raw news is
+// shared — synthesis stays per-user, so personalisation is untouched.
+async function getCachedOrFetch(
+  t: TopicQuery,
+  date: string,
+): Promise<{ content: string; sources: ReportSource[] }> {
+  const db = supabase();
+  const { data: hit, error: readErr } = await db
+    .from("topic_news_cache")
+    .select("content, sources")
+    .eq("topic_key", t.topicKey)
+    .eq("date", date)
+    .maybeSingle();
+  // A read failure degrades safely to a fresh fetch — but log it, or a broken cache (unapplied
+  // migration, RLS/grant drift) would silently revert everyone to full-price queries with no signal.
+  if (readErr) logger.warn("topic cache read failed", { topicKey: t.topicKey, error: readErr.message });
+  if (hit) {
+    logger.info("topic cache hit", { topicKey: t.topicKey, date });
+    return { content: hit.content as string, sources: (hit.sources ?? []) as ReportSource[] };
+  }
+
+  const result = await withDiagnostics(`perplexity:${t.topic}`, () =>
+    perplexitySearch(t.query, { recency: t.recency, system: SYSTEM_PROMPT, contextSize: "medium" }),
+  );
+  // Populate the shared cache. ignoreDuplicates → if another user won the race, keep their row.
+  const { error: writeErr } = await db
+    .from("topic_news_cache")
+    .upsert(
+      { topic_key: t.topicKey, date, content: result.content, sources: result.sources },
+      { onConflict: "topic_key,date", ignoreDuplicates: true },
+    );
+  if (writeErr) logger.warn("topic cache write failed", { topicKey: t.topicKey, error: writeErr.message });
+  return { content: result.content, sources: result.sources };
+}
 
 // Turn a raw pipeline error into a short, user-facing reason for reports.error_message.
 function friendlyFetchError(err: unknown): string {
