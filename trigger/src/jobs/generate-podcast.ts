@@ -12,7 +12,7 @@ export const generatePodcast = task({
   // Headroom for the slower expressive TTS models (eleven_v3). Parallel synthesis keeps real time
   // well under this; the bump is a safety margin so a long episode can't be killed mid-render.
   maxDuration: 600,
-  run: async (payload: { reportId: string; force?: boolean }) => {
+  run: async (payload: { reportId: string; force?: boolean; turns?: DialogueTurn[] }) => {
     const { reportId, force } = payload;
     const db = supabase();
 
@@ -51,17 +51,20 @@ export const generatePodcast = task({
     const episodeId = row!.id as string;
 
     try {
-      if (!markdown) throw new Error("report has no markdown to narrate");
+      if (!markdown && !payload.turns) throw new Error("report has no markdown to narrate");
 
       // 1. Write a two-person interview script (host asks, expert answers) as structured turns,
-      //    each tagged with the report section it covers (for chapters).
-      const turns = await withDiagnostics("podcast-script", () =>
-        writeScript(
-          markdown,
-          sections.map((s) => ({ heading: s.topic, isPrimer: Boolean(s.isPrimer) })),
-          recap,
-        ),
-      );
+      //    each tagged with the report section it covers (for chapters). A supplied script (from
+      //    the seed-test-episode dev task) skips this Anthropic call.
+      const turns =
+        payload.turns ??
+        (await withDiagnostics("podcast-script", () =>
+          writeScript(
+            markdown!,
+            sections.map((s) => ({ heading: s.topic, isPrimer: Boolean(s.isPrimer) })),
+            recap,
+          ),
+        ));
       if (turns.length === 0) throw new Error("podcast script came back empty");
       const script = renderTranscript(turns);
       const chapters = computeChapters(turns, sections);
