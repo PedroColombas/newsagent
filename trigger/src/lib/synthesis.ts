@@ -106,7 +106,10 @@ export async function synthesize(
 
   const message = await anthropic().messages.create({
     model,
-    max_tokens: 12000,
+    // Generous ceiling: a new user's first brief is ALL primers (longer), and the schema returns
+    // the content twice (per-section summaries + the full markdown), so the output is large. Plus
+    // adaptive thinking shares this budget. 12000 truncated primer-heavy briefs → invalid JSON.
+    max_tokens: 32000,
     thinking: { type: "adaptive" },
     output_config: {
       format: { type: "json_schema", schema: SYNTHESIS_SCHEMA },
@@ -118,7 +121,16 @@ export async function synthesize(
     messages: [{ role: "user", content: userMessage }],
   });
 
-  const parsed = JSON.parse(firstText(message.content)) as SynthesisOutput;
+  // A truncated (max_tokens) or text-less response would fail JSON.parse with a cryptic
+  // "Unexpected end of JSON input" — surface a clear, diagnosable error instead (Trigger retries).
+  const raw = firstText(message.content);
+  if (message.stop_reason === "max_tokens" || !raw.trim()) {
+    throw new Error(
+      `Synthesis returned no usable JSON (stop_reason=${message.stop_reason}, text length=${raw.length}). ` +
+        "Likely truncated — the brief may have too many/too-long sections for the token budget.",
+    );
+  }
+  const parsed = JSON.parse(raw) as SynthesisOutput;
 
   // Re-attach the real sources / level / timeframe from the fetched topics by index, so
   // URLs and metadata are never model-invented. Out-of-range indices are dropped.
