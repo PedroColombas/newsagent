@@ -104,22 +104,24 @@ export async function synthesize(
   // Route by mode: Opus's depth only where it earns its cost (deep_dive), else Sonnet.
   const model = prefs.report_mode === "deep_dive" ? MODELS.synthesisDeepDive : MODELS.synthesis;
 
-  const message = await anthropic().messages.create({
-    model,
-    // Generous ceiling: a new user's first brief is ALL primers (longer), and the schema returns
-    // the content twice (per-section summaries + the full markdown), so the output is large. Plus
-    // adaptive thinking shares this budget. 12000 truncated primer-heavy briefs → invalid JSON.
-    max_tokens: 32000,
-    thinking: { type: "adaptive" },
-    output_config: {
-      format: { type: "json_schema", schema: SYNTHESIS_SCHEMA },
-      effort: "medium",
-    },
-    system: [
-      { type: "text", text: SYNTHESIS_SYSTEM, cache_control: { type: "ephemeral" } },
-    ],
-    messages: [{ role: "user", content: userMessage }],
-  });
+  // Streamed: a new user's first brief is ALL primers (longer), and the schema returns the content
+  // twice (per-section summaries + full markdown), so the output is large; adaptive thinking shares
+  // this budget too. 12000 truncated primer-heavy briefs → invalid JSON, so we raised the ceiling —
+  // but a non-streaming request at this max_tokens can exceed the SDK's 10-minute limit and errors,
+  // so we stream and collect the final message (the recommended path for large outputs anyway).
+  const message = await anthropic()
+    .messages.stream({
+      model,
+      max_tokens: 32000,
+      thinking: { type: "adaptive" },
+      output_config: {
+        format: { type: "json_schema", schema: SYNTHESIS_SCHEMA },
+        effort: "medium",
+      },
+      system: [{ type: "text", text: SYNTHESIS_SYSTEM, cache_control: { type: "ephemeral" } }],
+      messages: [{ role: "user", content: userMessage }],
+    })
+    .finalMessage();
 
   // A truncated (max_tokens) or text-less response would fail JSON.parse with a cryptic
   // "Unexpected end of JSON input" — surface a clear, diagnosable error instead (Trigger retries).

@@ -9,7 +9,8 @@ import type { FetchedTopic } from "./fetch-news";
 
 export const generateReport = task({
   id: "generate-report",
-  maxDuration: 300,
+  // Headroom for a large streamed synthesis (a primer-heavy first brief) + the optional recap.
+  maxDuration: 600,
   run: async (payload: { userId: string; date: string; topics: FetchedTopic[]; force?: boolean }) => {
     const { userId, date, topics, force } = payload;
     const db = supabase();
