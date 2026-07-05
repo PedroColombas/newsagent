@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { withDiagnostics } from "../lib/diagnostics";
 import { writeScript } from "../lib/podcast-script";
 import { synthesizeDialogue, type DialogueTurn } from "../lib/tts";
+import { INTRO_SECONDS } from "../lib/intro-audio";
 import type { ReportContent } from "@shared/types";
 
 const AUDIO_BUCKET = "podcast-audio";
@@ -108,12 +109,13 @@ function renderTranscript(turns: DialogueTurn[]): string {
     .join("\n\n");
 }
 
-// Rough runtime estimate for the player UI (~150 words per minute across all turns).
+// Rough runtime estimate for the player UI (~150 words per minute across all turns), plus the
+// intro sting's real length (the word count doesn't know about the prepended audio).
 function estimateDurationSeconds(turns: DialogueTurn[]): number {
   const words = turns
     .map((t) => t.text.trim().split(/\s+/).filter(Boolean).length)
     .reduce((sum, n) => sum + n, 0);
-  return Math.max(1, Math.round((words / 150) * 60));
+  return Math.max(1, Math.round((words / 150) * 60 + INTRO_SECONDS));
 }
 
 // One chapter per topic, positioned by cumulative word count as a fraction (0..1) of the

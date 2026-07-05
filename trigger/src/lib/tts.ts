@@ -7,6 +7,7 @@ import {
 } from "./openai-tts";
 import { elevenSynthesizeDialogue, ELEVEN_MODEL, type ElevenVoice } from "./elevenlabs-tts";
 import { introMp3 } from "./intro-audio";
+import { encodeUniformMp3 } from "./audio-encode";
 
 // Podcast narration engine. ElevenLabs (multilingual_v2) is the quality path; OpenAI is the
 // fallback, used automatically when the ElevenLabs key is absent or a call fails — so the daily
@@ -76,11 +77,11 @@ async function narrate(turns: DialogueTurn[]): Promise<Buffer> {
   return openaiSynthesizeDialogue(turns, OPENAI_CAST);
 }
 
-// Narrate the full episode with the branded intro sting: the host's opening (welcome + preview +
-// any recap), then the sting, then the rest of the conversation.
-// NOTE: this joins the sting's mp3 bytes directly onto the voice track. If it plays at the wrong
-// speed/pitch on any device (the sting's format differs from the TTS output), the fix is to
-// re-encode everything to a uniform stream via ffmpeg — heavier, so we try the direct join first.
+// Narrate the full episode with the branded intro sting placed after the host's opening (welcome +
+// preview + any recap) and before the expert first speaks. The three pieces are re-encoded to ONE
+// uniform mp3 via ffmpeg so the 44.1kHz/stereo sting can't be silently dropped by iOS's decoder
+// (which locks onto the first frame's format). If ffmpeg fails for ANY reason we ship voice-only
+// (opening + rest, no sting) so an episode never breaks on the audio-assembly step.
 export async function synthesizeDialogue(turns: DialogueTurn[]): Promise<Buffer> {
   if (turns.length === 0) return Buffer.alloc(0);
 
@@ -90,5 +91,17 @@ export async function synthesizeDialogue(turns: DialogueTurn[]): Promise<Buffer>
 
   const opening = await narrate(turns.slice(0, split));
   const rest = split < turns.length ? await narrate(turns.slice(split)) : Buffer.alloc(0);
-  return Buffer.concat([opening, introMp3(), rest]);
+
+  try {
+    // encodeUniformMp3 drops empty buffers, so an empty `rest` (few-turn episode) is safe.
+    const mixed = await encodeUniformMp3([opening, introMp3(), rest]);
+    if (mixed.length === 0) throw new Error("uniform encode returned empty audio");
+    return mixed;
+  } catch (err) {
+    logger.warn("intro re-encode failed — shipping voice-only episode (no sting)", {
+      error: String((err as { message?: string })?.message ?? err),
+    });
+    // Voice-only fallback: both pieces are same-format OpenAI mp3, so a raw join is clean.
+    return Buffer.concat([opening, rest]);
+  }
 }

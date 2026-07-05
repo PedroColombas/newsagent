@@ -1,4 +1,5 @@
 import { defineConfig } from "@trigger.dev/sdk";
+import { ffmpeg } from "@trigger.dev/build/extensions/core";
 
 export default defineConfig({
   // NewsAgent project in the KUDA org. The project ref is not a secret.
@@ -11,6 +12,12 @@ export default defineConfig({
 
   // Default ceiling per run; individual tasks override with their own maxDuration.
   maxDuration: 300,
+
+  // Bakes ffmpeg into the deployed image (sets FFMPEG_PATH) for podcast audio assembly — the
+  // intro sting + voice segments are re-encoded to one uniform mp3. No effect in local `dev`.
+  build: {
+    extensions: [ffmpeg()],
+  },
 
   retries: {
     // Fail fast while building locally; retry in the cloud.

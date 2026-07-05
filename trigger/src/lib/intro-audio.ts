@@ -9,3 +9,8 @@ export function introMp3(): Buffer {
   if (!cached) cached = Buffer.from(INTRO_MP3_BASE64, "base64");
   return cached;
 }
+
+// Real playback length of the intro sting (seconds). The duration estimate is otherwise word-count
+// based and knows nothing about the audio, so this is added there for scrubber accuracy. ~154644
+// bytes at 320 kbps ≈ 3.9s; update if the asset is re-cut.
+export const INTRO_SECONDS = 3.9;
