@@ -85,9 +85,9 @@ async function narrate(turns: DialogueTurn[]): Promise<Buffer> {
 export async function synthesizeDialogue(turns: DialogueTurn[]): Promise<Buffer> {
   if (turns.length === 0) return Buffer.alloc(0);
 
-  // The sting lands after the host's lead-in, right before the expert first speaks.
-  let split = turns.findIndex((t) => t.speaker === "expert");
-  if (split <= 0) split = 1; // no/immediate expert → after the first turn
+  // The sting lands right after the host's opening welcome + topic preview (the first turn) and
+  // BEFORE any catch-up recap — the script is structured welcome+preview → catch-up → topics.
+  const split = 1;
 
   const opening = await narrate(turns.slice(0, split));
   const rest = split < turns.length ? await narrate(turns.slice(split)) : Buffer.alloc(0);

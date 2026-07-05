@@ -25,14 +25,14 @@ Make it sound human:
 
 Rules:
 - Output ONLY spoken dialogue, as a list of turns. No markdown, no narration, no stage directions, no "[music]" cues.
-- Open with the host welcoming the listener and previewing the episode; close with the host signing off.
+- The VERY FIRST turn is the host welcoming the listener and previewing what today's episode covers — a quick run-through of the topics. Keep that welcome + preview together as a single opening turn. Close with the host signing off.
 - Alternate naturally — the host asks and steers, the expert answers. Keep turns short to medium so it feels like a real back-and-forth.
 - Ground every claim in the report. Don't invent facts. Attribute to outlets by name, and when a source first comes up, briefly work in what it is and how trustworthy it is, spoken naturally — e.g. "...and that's from Nature, the peer-reviewed journal, so it's well-grounded", or "the Financial Times reported...". Only vouch for outlets you genuinely recognise; if a source is unfamiliar or looks low-quality, say so plainly rather than implying authority.
 - Write for the ear: say dates and numbers naturally, expand symbols, and NEVER read out URLs.
 - Cover the report's topics in order, and match its depth — a short report makes a short episode. Don't pad.
 - If the prompt lists the report's sections with indices, set each turn's "section" to the 0-based index of the section that turn covers. The opening welcome takes the first section's index; the closing sign-off takes the last.
 - Sections marked [catch-up] are NEW to the listener. Open those by briefly framing it as a get-up-to-speed — the host flags that it's a new area ("this one's new for you, so let's set the scene") and the expert lays out the essential background before moving to the latest. Keep it natural and short; don't belabour it.
-- If a "while you were away" recap is provided, the host opens the episode (right after welcoming the listener) with a brief "here's what you've missed since last time" segment built from it, then moves into today's topics. Keep it short.`;
+- If a "while you were away" recap is provided, place it AFTER that opening welcome + preview turn: the host gives a brief "here's what you've missed since last time" catch-up built from it, then moves into today's topics. So the order is always: welcome + topic preview, THEN the catch-up, THEN the topics. Keep the catch-up short.`;
 
 const PODCAST_SCHEMA = {
   type: "object",
