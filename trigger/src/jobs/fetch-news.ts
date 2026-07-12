@@ -49,6 +49,23 @@ export const fetchNews = task({
         return { userId, date, skipped: true };
       }
 
+      // Load prefs first so we can bail on an un-onboarded user before creating any row.
+      const { data, error } = await supabase()
+        .from("preferences")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+      if (error) throw error;
+      const prefs = data as Preferences;
+
+      // No-topics guard: an un-onboarded user (no subtopics / interests) has nothing to generate.
+      // Skip entirely rather than create an empty brief and waste a synthesis call. The daily cron
+      // fans out to every user at their delivery hour, including those who haven't set up yet.
+      if (planReportSections(prefs).length === 0) {
+        logger.info("no topics — skipping generation", { userId, date });
+        return { userId, date, skipped: "no-topics" };
+      }
+
       // Claim the reports row and mark it generating up front, so the app shows the compiling
       // state immediately and it SURVIVES A RELOAD. (Previously the row appeared only once
       // generate-report ran — i.e. after the whole Perplexity stage — leaving a multi-minute gap
@@ -69,14 +86,6 @@ export const fetchNews = task({
           },
           { onConflict: "user_id,date" },
         );
-
-      const { data, error } = await supabase()
-        .from("preferences")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
-      if (error) throw error;
-      const prefs = data as Preferences;
 
       // Topics this user has already been briefed on — a topic only gets a catch-up primer
       // the first time it appears.

@@ -1,5 +1,6 @@
 import type { Preferences } from "@shared/types";
-import { MAX_GENRES } from "./preferences-options";
+import { MAX_GENRES, MAX_TOPICS } from "./preferences-options";
+import { topicCount } from "./topic-actions";
 
 type Update = (patch: Partial<Preferences>) => void;
 
@@ -15,8 +16,12 @@ export function toggleGenre(prefs: Preferences, update: Update, genre: string) {
   }
 }
 
+// Subtopics are the actual report topics. Adding is capped at MAX_TOPICS total (subtopics + custom);
+// removing is always allowed.
 export function toggleSubtopic(prefs: Preferences, update: Update, genre: string, sub: string) {
   const current = prefs.subtopics[genre] ?? [];
-  const next = current.includes(sub) ? current.filter((s) => s !== sub) : [...current, sub];
+  const isRemoving = current.includes(sub);
+  if (!isRemoving && topicCount(prefs) >= MAX_TOPICS) return; // at the topic cap
+  const next = isRemoving ? current.filter((s) => s !== sub) : [...current, sub];
   update({ subtopics: { ...prefs.subtopics, [genre]: next } });
 }

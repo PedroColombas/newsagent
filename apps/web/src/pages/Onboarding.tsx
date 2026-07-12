@@ -3,22 +3,23 @@ import { useNavigate } from "react-router-dom";
 import type { Preferences } from "@shared/types";
 import { planReportSections } from "@shared/plan-topics";
 import { toggleGenre, toggleSubtopic } from "../lib/preferences-actions";
-import { REPORT_MODES, VOICES } from "../lib/preferences-options";
+import { REPORT_MODES, VOICES, MAX_TOPICS } from "../lib/preferences-options";
+import { topicCount } from "../lib/topic-actions";
 import { GenrePicker } from "../components/preferences/GenrePicker";
 import { SubtopicPicker } from "../components/preferences/SubtopicPicker";
 import { CustomInterestsEditor } from "../components/preferences/CustomInterestsEditor";
 import { ReportStyleControls } from "../components/preferences/ReportStyleControls";
 import { Toggle } from "../components/ui/Toggle";
-import { WelcomeCarousel } from "../components/WelcomeCarousel";
+import { WelcomeScreen } from "../components/WelcomeScreen";
 import { TopicOrderList } from "../components/preferences/TopicOrderList";
 
 const STEPS = [
-  { title: "Pick your genres", subtitle: "The broad areas you want covered — up to five." },
+  { title: "Pick your areas", subtitle: "Broad areas to explore — you'll choose specific topics next. Up to five." },
   {
-    title: "Choose your angles",
-    subtitle: "Subtopics within each genre, suggested from what's in the news now.",
+    title: "Choose your topics",
+    subtitle: "These become the sections of your brief — pick the ones you care about.",
   },
-  { title: "Anything specific?", subtitle: "Add interests in your own words — optional." },
+  { title: "Anything specific?", subtitle: "Add topics in your own words — optional." },
   { title: "How should it read?", subtitle: "Shape the format and voice of your brief." },
 ];
 
@@ -35,9 +36,11 @@ export function Onboarding({
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const total = STEPS.length;
+  const count = topicCount(prefs);
+  const atCap = count >= MAX_TOPICS;
 
-  // Trailer first — set the scene before the config wizard.
-  if (!started) return <WelcomeCarousel onDone={() => setStarted(true)} />;
+  // Welcome screen first — a warm hello before the config wizard.
+  if (!started) return <WelcomeScreen onStart={() => setStarted(true)} />;
 
   function finish(to: string) {
     onDone();
@@ -46,7 +49,7 @@ export function Onboarding({
 
   if (step === total) {
     return (
-      <div className="mx-auto flex h-full max-w-md flex-col px-6 pb-8 pt-6">
+      <div className="mx-auto h-full max-w-md overflow-y-auto px-6 pb-8 pt-6">
         <EditionPreview
           prefs={prefs}
           update={update}
@@ -83,17 +86,24 @@ export function Onboarding({
           <GenrePicker selected={prefs.genres} onToggle={(g) => toggleGenre(prefs, update, g)} />
         )}
         {step === 1 && (
-          <SubtopicPicker
-            genres={prefs.genres}
-            subtopics={prefs.subtopics}
-            onToggle={(genre, sub) => toggleSubtopic(prefs, update, genre, sub)}
-          />
+          <div className="flex flex-col gap-3">
+            <TopicCount count={count} atCap={atCap} />
+            <SubtopicPicker
+              genres={prefs.genres}
+              subtopics={prefs.subtopics}
+              onToggle={(genre, sub) => toggleSubtopic(prefs, update, genre, sub)}
+            />
+          </div>
         )}
         {step === 2 && (
-          <CustomInterestsEditor
-            interests={prefs.custom_interests ?? []}
-            onChange={(custom_interests) => update({ custom_interests })}
-          />
+          <div className="flex flex-col gap-3">
+            <TopicCount count={count} atCap={atCap} />
+            <CustomInterestsEditor
+              interests={prefs.custom_interests ?? []}
+              onChange={(custom_interests) => update({ custom_interests })}
+              atCap={atCap}
+            />
+          </div>
         )}
         {step === 3 && (
           <div className="flex flex-col gap-6">
@@ -131,6 +141,17 @@ export function Onboarding({
           {step === total - 1 ? "Review" : "Continue"}
         </button>
       </div>
+    </div>
+  );
+}
+
+function TopicCount({ count, atCap }: { count: number; atCap: boolean }) {
+  return (
+    <div className="flex items-center justify-between px-1">
+      <span className="text-[12px] text-[var(--muted)]">
+        {count} of {MAX_TOPICS} topics
+      </span>
+      {atCap && <span className="text-[11.5px] text-[var(--faint)]">Limit reached — deselect to swap</span>}
     </div>
   );
 }
@@ -194,12 +215,12 @@ function EditionPreview({
   const sections = planReportSections(prefs);
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex-none">
+    <div className="flex flex-col">
+      <div>
         <span className="text-[12px] font-bold uppercase tracking-[0.8px] text-[var(--accent)]">All set</span>
         <h1 className="mt-3 text-[25px] font-bold leading-tight tracking-tight">Here's tomorrow's edition</h1>
         <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--muted)]">
-          Your brief will run {sections.length} {sections.length === 1 ? "section" : "sections"}. Drag to reorder.
+          Your brief will run {sections.length} {sections.length === 1 ? "section" : "sections"}. Drag to reorder, or delete any you don't want.
         </p>
         <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
           <SpecRow label="Format" value={mode?.label} hint={mode?.hint} />
@@ -233,7 +254,7 @@ function EditionPreview({
         </div>
       </div>
 
-      <div className="mt-5 flex-1 overflow-y-auto">
+      <div className="mt-6">
         <span className="text-[11px] font-bold uppercase tracking-[1.2px] text-[var(--faint)]">
           In this edition
         </span>
@@ -242,7 +263,7 @@ function EditionPreview({
         </div>
       </div>
 
-      <div className="flex flex-none items-center gap-3 pt-4">
+      <div className="flex items-center gap-3 pt-6">
         <button
           type="button"
           onClick={onBack}

@@ -2,16 +2,29 @@ import { useEffect, useState } from "react";
 import { Reorder } from "motion/react";
 import type { Preferences } from "@shared/types";
 import { planReportSections, sectionKey, type PlannedTopic } from "@shared/plan-topics";
+import { removeEntry, type TopicEntry } from "../../lib/topic-actions";
 
 function describeSection(s: PlannedTopic): string {
-  if (s.level === 3) return "Custom interest";
-  if (s.level === 2) return `${s.genre} · subtopic`;
-  return "Genre overview";
+  return s.level === 3 ? "Your own words" : (s.genre ?? "");
 }
 
-// Drag-to-reorder list of the report's sections. Persists the order as prefs.topic_order (which
-// planReportSections — shared with the pipeline — honours). Used in the onboarding review and on
-// the Preferences page.
+// A PlannedTopic (from the shared planner) → a TopicEntry (for the mutation helpers).
+function toEntry(s: PlannedTopic): TopicEntry {
+  return s.level === 3
+    ? { kind: "custom", text: s.topic }
+    : { kind: "subtopic", genre: s.genre ?? "", sub: s.topic };
+}
+
+function TrashIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3 6h18M8 6V4h8v2m1 0-1 14H7L6 6" />
+    </svg>
+  );
+}
+
+// Drag-to-reorder + delete list of the report's sections. Persists order as prefs.topic_order (which
+// planReportSections — shared with the pipeline — honours). Used in the onboarding review.
 export function TopicOrderList({
   prefs,
   update,
@@ -21,8 +34,8 @@ export function TopicOrderList({
 }) {
   const [ordered, setOrdered] = useState<PlannedTopic[]>(() => planReportSections(prefs));
 
-  // Re-sync when the SET of topics changes (genres/subtopics/interests/cap edited on the same
-  // screen) — but NOT on a bare reorder (that's this list's own drag). The signal ignores order.
+  // Re-sync when the SET of topics changes (edited/deleted on the same screen) — but NOT on a bare
+  // reorder (that's this list's own drag). The signal ignores order.
   const setSignal = planReportSections({ ...prefs, topic_order: [] })
     .map(sectionKey)
     .sort()
@@ -35,7 +48,7 @@ export function TopicOrderList({
   if (ordered.length === 0) {
     return (
       <p className="px-1 text-[13px] text-[var(--muted)]">
-        Add a genre or interest to start shaping your brief.
+        Add a subtopic or interest to start shaping your brief.
       </p>
     );
   }
@@ -54,18 +67,25 @@ export function TopicOrderList({
         <Reorder.Item
           key={sectionKey(s)}
           value={s}
-          className="flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3 active:cursor-grabbing"
+          className="flex items-center gap-2.5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3 active:cursor-grabbing"
         >
           <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-[var(--accent)]/12 text-[12px] font-bold text-[var(--accent)]">
             {i + 1}
           </span>
           <div className="flex min-w-0 flex-1 flex-col">
-            <span className="text-[14px] font-semibold leading-snug">{s.topic}</span>
+            <span className="truncate text-[14px] font-semibold leading-snug">{s.topic}</span>
             <span className="text-[11.5px] text-[var(--faint)]">{describeSection(s)}</span>
           </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" className="flex-none text-[var(--faint)]" aria-hidden>
-            <path d="M5 9h14M5 15h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
+          <button
+            onClick={(ev) => {
+              ev.stopPropagation();
+              update(removeEntry(prefs, toEntry(s)));
+            }}
+            aria-label={`Delete ${s.topic}`}
+            className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-[var(--faint)] active:bg-red-500/10 active:text-red-600"
+          >
+            <TrashIcon />
+          </button>
         </Reorder.Item>
       ))}
     </Reorder.Group>

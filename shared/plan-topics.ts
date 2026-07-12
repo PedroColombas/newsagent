@@ -7,9 +7,9 @@ export interface PlannedTopic {
 }
 
 /**
- * Single source of truth for which sections a report will contain. Every genre, subtopic
- * and custom interest becomes its own section; ordered most-specific-first (L3 > L2 > L1,
- * stable within a level); capped at max_topics.
+ * Single source of truth for which sections a report will contain. Genres are containers;
+ * only subtopics (L2) and custom interests (L3) become sections, ordered most-specific-first
+ * (L3 > L2, stable within a level).
  *
  * Used by BOTH the pipeline (fetch-news → one Perplexity query per section) and the app's
  * edition preview, so the preview always matches the real report. The pipeline additionally
@@ -26,9 +26,8 @@ export function sectionKey(t: PlannedTopic): string {
 export function planReportSections(prefs: Preferences): PlannedTopic[] {
   const topics: PlannedTopic[] = [];
 
-  for (const genre of prefs.genres) {
-    topics.push({ topic: genre, level: 1, genre });
-  }
+  // Genres are CONTAINERS for choosing subtopics — they don't become sections themselves. A brief
+  // is the user's subtopics (L2) + custom interests (L3), which keeps the topic count focused.
   for (const [genre, subs] of Object.entries(prefs.subtopics ?? {})) {
     for (const sub of subs) {
       topics.push({ topic: sub, level: 2, genre });
@@ -39,8 +38,7 @@ export function planReportSections(prefs: Preferences): PlannedTopic[] {
     if (trimmed) topics.push({ topic: trimmed, level: 3, genre: null });
   }
 
-  // Default order: most-specific-first (stable within a level). No cap — the user's topic list IS
-  // their brief (they add/remove topics directly in Preferences).
+  // Default order: most-specific-first (stable within a level) — custom interests, then subtopics.
   topics.sort((a, b) => b.level - a.level);
 
   // Apply the user's manual order (drag-to-reorder): ordered sections first in that order; anything
@@ -53,9 +51,9 @@ export function planReportSections(prefs: Preferences): PlannedTopic[] {
   return topics;
 }
 
-/** Total candidate sections before the max_topics cap — for "showing N of M" messaging. */
+/** Total sections a brief will contain — subtopics + custom interests (genres are containers). */
 export function countCandidateSections(prefs: Preferences): number {
   const subtopicCount = Object.values(prefs.subtopics ?? {}).reduce((n, subs) => n + subs.length, 0);
   const interestCount = (prefs.custom_interests ?? []).filter((s) => s.trim()).length;
-  return prefs.genres.length + subtopicCount + interestCount;
+  return subtopicCount + interestCount;
 }

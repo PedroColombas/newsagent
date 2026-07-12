@@ -3,9 +3,11 @@ import { MAX_INTERESTS } from "../../lib/preferences-options";
 export function CustomInterestsEditor({
   interests,
   onChange,
+  atCap = false,
 }: {
   interests: string[];
   onChange: (next: string[]) => void;
+  atCap?: boolean; // at the total topic cap — no more topics of any kind
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -31,7 +33,7 @@ export function CustomInterestsEditor({
           </button>
         </div>
       ))}
-      {interests.length < MAX_INTERESTS && (
+      {interests.length < MAX_INTERESTS && !atCap && (
         <button
           type="button"
           onClick={() => onChange([...interests, ""])}
