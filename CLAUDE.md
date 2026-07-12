@@ -52,16 +52,21 @@ not an afterthought.
 - App Store path: build PWA-first; wrap with Capacitor later if needed. No code
   changes required for that, so don't pre-optimise for it.
 
-### Topic model (3 levels)
-1. **Genre** — predefined list, user picks 1–5 (Technology, Politics, Finance, Sport, Science, Culture, Health…)
-2. **Subtopics** — dynamically suggested per genre, multi-select
-3. **Custom interests** — free-text natural language, up to 5
-   (e.g. "what China is doing in chip development"). At pipeline time a cheap
-   Claude call translates each into a Perplexity search query — interpreted
-   fresh each run so it stays topical.
+### Topic model
+1. **Genre** — a CONTAINER, not a section. User picks up to 5 genres to browse; a genre alone
+   produces nothing. (Changed after user testing — genres used to become broad sections too, which
+   inflated topic counts.)
+2. **Subtopics** — chosen within a genre; these ARE report sections.
+3. **Custom interests** — free-text natural language; also sections. At pipeline time a cheap Claude
+   call translates each into a Perplexity search query, interpreted fresh each run so it stays topical.
+
+A brief = subtopics + custom interests only (see `planReportSections`). **Hard cap of 8 total topics**
+(`MAX_TOPICS`, subtopics + custom) with a live count — more slows generation + runs up cost. (This
+reinstates a cap after the earlier "your topic list IS your brief" experiment; user testing showed
+10–12-topic briefs were too slow/expensive.)
 
 Plus: **exclusions** (free text, injected into the Claude summarisation prompt),
-**max_topics** (3–10), **report_mode**, **voice**, **delivery_hour** (UTC).
+**report_mode**, **voice**, **delivery_hour** (UTC). The `max_topics` DB column is now unused.
 
 ### Report mode (what the report is)
 - `briefing` — bulleted headlines, one-sentence context
