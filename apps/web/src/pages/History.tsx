@@ -127,7 +127,7 @@ export function History() {
             <div className="flex justify-center">
               <span className="h-1.5 w-9 rounded-full bg-[var(--line)]" />
             </div>
-            <div className="flex items-baseline justify-between py-3" data-tour="history-list">
+            <div className="flex items-baseline justify-between py-3">
               <span className="text-[11px] font-bold uppercase tracking-[1.2px] text-[var(--faint)]">
                 Recent reports
               </span>
@@ -143,8 +143,13 @@ export function History() {
             </p>
           ) : (
             <div className="flex flex-col gap-2.5">
-              {reports.map((r) => (
-                <ReportRow key={r.id} report={r} onOpen={() => navigate(`/report/${r.date}`)} />
+              {reports.map((r, i) => (
+                <ReportRow
+                  key={r.id}
+                  report={r}
+                  tour={i === 0 ? "history-row" : undefined}
+                  onOpen={() => navigate(`/report/${r.date}`)}
+                />
               ))}
             </div>
           )}
@@ -164,10 +169,10 @@ export function History() {
             },
             {
               key: "history-list",
-              target: '[data-tour="history-list"]',
+              target: '[data-tour="history-row"]',
               enabled: reports.length > 0,
-              title: "Your recent briefs",
-              body: "An accent bar marks unread ones; the mic icon means a brief has a podcast.",
+              title: "Open any day's brief",
+              body: "Tap a card to read that day's brief. An accent bar marks unread ones; the mic icon means it has a podcast.",
             },
           ]}
         />
@@ -189,11 +194,20 @@ function dayClass(hasReport: boolean, isToday: boolean): string {
   return `${base} text-[var(--faint)]`;
 }
 
-function ReportRow({ report, onOpen }: { report: ReportSummary; onOpen: () => void }) {
+function ReportRow({
+  report,
+  onOpen,
+  tour,
+}: {
+  report: ReportSummary;
+  onOpen: () => void;
+  tour?: string;
+}) {
   const parts = rowDateParts(report.date);
   return (
     <button
       onClick={onOpen}
+      data-tour={tour}
       className={`flex items-center gap-3 rounded-2xl border border-[var(--line)] border-l-[3px] bg-[var(--surface)] p-3 text-left transition-opacity active:opacity-60 ${
         report.read ? "border-l-[var(--line)] opacity-70" : "border-l-[var(--accent)]"
       }`}

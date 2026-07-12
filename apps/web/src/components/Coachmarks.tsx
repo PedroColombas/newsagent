@@ -8,18 +8,20 @@ export interface Tip {
   title: string;
   body: string;
   enabled?: boolean; // default true; false = not applicable right now → deferred to a later visit
+  placement?: "above" | "below"; // preferred side; falls back if that side has no room
 }
 
 const BUBBLE_MAX = 340;
 const MARGIN = 12; // min gap from the viewport edges
 const GAP = 12; // gap between the target and the bubble
-const RING = 4; // highlight-ring padding around the target
+const MIN_ROOM = 130; // space (px) needed to honour a placement preference before falling back
 
 // Contextual coach-marks: a speech bubble that points at a real on-screen element, shown one tip at
-// a time. Unlike a full-screen tour, tips are page-local and can be conditional — a tip whose target
-// isn't present (or whose `enabled` is false) is skipped for now and gets its turn on a later visit.
-// Pages mount this once their content is on screen; each dismissal is reported via onSeen so it never
-// shows again. Portaled to <body> so the fixed layer escapes the page-transition transforms.
+// a time. It's an ADDITION to the live page, not a modal — the layer is click-through so the user can
+// keep scrolling and tapping; the bubble simply travels with its target (and hides when the target
+// scrolls out of view). Tips are page-local and can be conditional — a tip whose target isn't present
+// (or whose `enabled` is false) is skipped for now and gets its turn on a later visit. Each dismissal
+// is reported via onSeen so it never shows again. Portaled to <body> to escape page-transition transforms.
 export function Coachmarks({
   tips,
   seen,
@@ -36,37 +38,46 @@ export function Coachmarks({
   );
   const [idx, setIdx] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
-  const [radius, setRadius] = useState(14);
   const [vw, setVw] = useState(() => window.innerWidth);
   const [vh, setVh] = useState(() => window.innerHeight);
 
   const tip = idx < batch.length ? batch[idx] : null;
 
-  // Measure the current tip's target after layout. Retry briefly if it isn't in the DOM yet (page
-  // content can render a beat after mount); if it never appears, skip it (stays unseen for next time).
+  // Measure the target, then keep the bubble pinned to it as the user scrolls or resizes. Retry
+  // briefly if the target renders a beat after mount; if it never appears, skip it (stays unseen).
   useLayoutEffect(() => {
     if (!tip) return;
     let raf = 0;
     let tries = 0;
-    const measure = () => {
+    let found = false;
+    const remeasure = () => {
+      const el = document.querySelector(tip.target);
+      if (!el) return;
+      setRect(el.getBoundingClientRect());
+      setVw(window.innerWidth);
+      setVh(window.innerHeight);
+    };
+    const locate = () => {
       const el = document.querySelector(tip.target);
       if (el) {
+        found = true;
         el.scrollIntoView({ block: "nearest", inline: "nearest" });
-        setRadius((parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0) + RING);
-        setRect(el.getBoundingClientRect());
-        setVw(window.innerWidth);
-        setVh(window.innerHeight);
+        remeasure();
         return;
       }
-      if (tries++ < 12) raf = requestAnimationFrame(measure);
+      if (tries++ < 12) raf = requestAnimationFrame(locate);
       else setIdx((n) => n + 1); // give up on a missing target
     };
-    measure();
-    const onResize = () => measure();
-    window.addEventListener("resize", onResize);
+    const onMove = () => {
+      if (found) remeasure();
+    };
+    locate();
+    window.addEventListener("scroll", onMove, true); // capture → catches inner scroll containers too
+    window.addEventListener("resize", onMove);
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onMove, true);
+      window.removeEventListener("resize", onMove);
     };
   }, [tip]);
 
@@ -83,12 +94,20 @@ export function Coachmarks({
   }, [batch, idx, onSeen]);
 
   if (!tip || !rect) return null;
+  // The bubble travels with its target — hide it while the target is scrolled out of view.
+  if (rect.bottom < 8 || rect.top > vh - 8) return null;
 
-  // Anchor to the visible slice of the target (a very tall element may exceed the viewport), and put
-  // the bubble on whichever side has more room — so it never lands off-screen.
+  // Anchor to the visible slice of the target and put the bubble on the preferred side if it has
+  // room, else on whichever side has more — so it never lands off-screen or covers the feature.
   const anchorTop = Math.max(rect.top, MARGIN);
   const anchorBottom = Math.min(rect.bottom, vh - MARGIN);
-  const below = vh - anchorBottom >= anchorTop;
+  const roomBelow = vh - anchorBottom;
+  const roomAbove = anchorTop;
+  const auto = roomBelow >= roomAbove; // default: whichever side has more room
+  let below = auto;
+  if (tip.placement === "below") below = roomBelow >= MIN_ROOM || auto;
+  else if (tip.placement === "above") below = roomAbove >= MIN_ROOM ? false : auto;
+
   const bubbleW = Math.min(vw - MARGIN * 2, BUBBLE_MAX);
   const targetCx = rect.left + rect.width / 2;
   const centerX = Math.min(Math.max(targetCx, MARGIN + bubbleW / 2), vw - MARGIN - bubbleW / 2);
@@ -102,22 +121,10 @@ export function Coachmarks({
   const last = idx === batch.length - 1;
 
   return createPortal(
-    // Transparent tap-catcher — no dim; tapping anywhere off the bubble advances.
-    <div className="fixed inset-0 z-[70]" onClick={advance}>
+    // Click-through layer — the page underneath stays scrollable/tappable; only the bubble catches taps.
+    <div className="pointer-events-none fixed inset-0 z-[70]">
       <div
-        className="coach-ring pointer-events-none absolute transition-all duration-200"
-        style={{
-          left: rect.left - RING,
-          top: rect.top - RING,
-          width: rect.width + RING * 2,
-          height: rect.height + RING * 2,
-          borderRadius: radius,
-        }}
-      />
-
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="absolute rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[0_16px_40px_-12px_rgba(20,14,8,0.5)]"
+        className="pointer-events-auto absolute rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[0_16px_40px_-12px_rgba(20,14,8,0.5)]"
         style={bubbleStyle}
       >
         {/* tail — a rotated square straddling the bubble edge, pointing at the target */}

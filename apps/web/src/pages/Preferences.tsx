@@ -85,8 +85,8 @@ export function Preferences() {
       </div>
 
       {/* Your topics — each is a section; drag to reorder, tap to edit, or add */}
-      <div className="flex flex-col gap-3">
-        <div className="px-1" data-tour="prefs-topics">
+      <div className="flex flex-col gap-3" data-tour="prefs-topics">
+        <div className="px-1">
           <SectionLabel>Your topics</SectionLabel>
           <p className="mt-1 text-[12.5px] text-[var(--muted)]">
             Each is a section in your brief. Drag to reorder, tap to edit, or add your own.
@@ -136,6 +136,7 @@ export function Preferences() {
           {
             key: "prefs-topics",
             target: '[data-tour="prefs-topics"]',
+            placement: "below", // sit under the topic cards, pointing up, so it never covers them
             title: "Your topics",
             body: "These are the sections of your brief. Drag to reorder, tap to edit, or add up to 8.",
           },
