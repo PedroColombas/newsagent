@@ -5,13 +5,14 @@ import type { FetchedTopic } from "../jobs/fetch-news";
 // ─────────────────────────────────────────────────────────────────────────────
 // Report synthesis — DESIGNED WITH THE OWNER. Pure LLM logic (no Trigger/DB deps) so it
 // can be previewed in isolation (scripts/preview-synthesis.ts); generate-report wraps it.
-//   • Structured outputs (output_config.format): one call returns sections + markdown.
+//   • Structured outputs (output_config.format): the model returns ONLY the sections; the report
+//     markdown is rendered in code from them — halving output vs having the model emit it twice
+//     (which overloaded heavy all-primer first briefs into stubbing sections).
 //   • report_mode controls length/structure, voice controls tone, exclusions are a hard
 //     filter. Those specs live in the static system prompt below (cache-friendly).
 //   • Claude tags each section with the index of the fetched topic it's based on; we
 //     re-attach the real sources/level/timeframe in code, so URLs are never invented.
-//   • Model routes by mode: Sonnet for briefing/standard, Opus for deep_dive. Tunable via
-//     MODELS.synthesis / MODELS.synthesisDeepDive in lib/anthropic.
+//   • Model: Opus (MODELS.synthesis). A guard rejects a degraded (stubbed/short-changed) response.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Static — identical for every user + run, so it sits in `system` with cache_control.
@@ -34,13 +35,12 @@ RULES:
 - Attribute claims in the prose to their source by name, and on the source's first mention add a brief, neutral note on what the outlet is and how reliable it is — e.g. "According to Nature, a peer-reviewed scientific journal, researchers...", or "Reuters, an international news agency, reports...". Add this note ONLY for outlets you genuinely recognise; if you do not recognise a source, say so honestly rather than implying authority (e.g. "according to [name], a personal blog whose claims aren't independently verified, ..."). Never overstate reliability. Draw the outlet name from the source's title or URL.
 - Keep one section per topic. Mode controls length, not grouping. In deep_dive you may drop low-priority topics, but never merge two topics into one section.
 - State each topic's time window in the prose using its recency value (day = the last 24 hours, week = the last 7 days, month = the last 30 days).
-- After each section in the markdown, list that topic's sources as "[title](url) — date", using only the sources provided for that topic. Never fabricate or alter URLs. (The credibility note belongs in the prose, not here.)
 - If a topic's research is thin or empty, say so in one sentence rather than padding.
 - Apply exclusions as a hard filter: omit anything matching, even if present in the research.
 
 CATCH-UP PRIMERS: Topics marked "primer": true are ones the reader is following for the FIRST time. For those sections, orient a newcomer — set up the current state of the field and why it matters, give the essential background, then the key recent developments, rather than just today's headline. Keep the selected mode and voice, though a primer section may run a little longer than a normal one. Use the given catch-up depth: "quick" = the essentials in a tight paragraph or two; "full" = a thorough but readable get-up-to-speed briefing. Sections not marked primer stay focused on the latest developments.
 
-OUTPUT: Return JSON matching the schema. "sections" has one entry per topic you include — each with "topic_index" (the index of the topic in the input array it is based on), a "heading", and a "summary" written in the selected mode and voice. "markdown" is the full rendered report: headings, prose, and the per-section source lists.`;
+OUTPUT: Return JSON matching the schema — a "sections" array, one entry per topic you include, each with "topic_index" (the index of the topic in the input array it is based on), a "heading", and a "summary" written in the selected mode and voice. Do NOT emit a full markdown document or source lists — the report layout and citations are assembled in code.`;
 
 const SYNTHESIS_SCHEMA = {
   type: "object",
@@ -64,18 +64,13 @@ const SYNTHESIS_SCHEMA = {
         additionalProperties: false,
       },
     },
-    markdown: {
-      type: "string",
-      description: "The full report as markdown, including the per-section source lists",
-    },
   },
-  required: ["sections", "markdown"],
+  required: ["sections"],
   additionalProperties: false,
 };
 
 interface SynthesisOutput {
   sections: { topic_index: number; heading: string; summary: string }[];
-  markdown: string;
 }
 
 export async function synthesize(
@@ -104,11 +99,10 @@ export async function synthesize(
   // Route by mode: Opus's depth only where it earns its cost (deep_dive), else Sonnet.
   const model = prefs.report_mode === "deep_dive" ? MODELS.synthesisDeepDive : MODELS.synthesis;
 
-  // Streamed: a new user's first brief is ALL primers (longer), and the schema returns the content
-  // twice (per-section summaries + full markdown), so the output is large; adaptive thinking shares
-  // this budget too. 12000 truncated primer-heavy briefs → invalid JSON, so we raised the ceiling —
-  // but a non-streaming request at this max_tokens can exceed the SDK's 10-minute limit and errors,
-  // so we stream and collect the final message (the recommended path for large outputs anyway).
+  // Streamed: a new user's first brief is ALL primers (longer), so the output is still sizeable even
+  // with markdown built in code; adaptive thinking shares this budget too. A non-streaming request at
+  // this max_tokens can exceed the SDK's 10-minute limit and errors, so we stream and collect the
+  // final message (the recommended path for large outputs anyway).
   const message = await anthropic()
     .messages.stream({
       model,
@@ -151,5 +145,34 @@ export async function synthesize(
       };
     });
 
-  return { content: { sections }, markdown: parsed.markdown };
+  // Guard against a model that "gives up" on a heavy brief — dropping topics or stubbing sections
+  // with placeholder text (seen on all-primer first briefs). Fail loudly so Trigger retries rather
+  // than shipping a broken report. deep_dive is allowed to focus on fewer topics.
+  const minSections = prefs.report_mode === "deep_dive" ? 1 : topics.length;
+  const stub = sections.find(
+    (s) => s.summary.trim().length < 15 || /\bplaceholder\b/i.test(`${s.topic} ${s.summary}`),
+  );
+  if (sections.length < minSections || stub) {
+    throw new Error(
+      `Synthesis degraded: ${sections.length}/${topics.length} sections` +
+        (stub ? `, stubbed "${stub.topic}"` : "") +
+        " — retrying.",
+    );
+  }
+
+  return { content: { sections }, markdown: renderReportMarkdown(sections) };
+}
+
+// Render the report markdown in code from the finished sections — heading, the model's prose, then a
+// per-section source list from the REAL attached sources (so citations can't drift). Replaces having
+// the model emit the whole report a second time. Consumed by share, the podcast, and the recap.
+function renderReportMarkdown(sections: ReportSection[]): string {
+  return sections
+    .map((s) => {
+      const sourceList = s.sources
+        .map((src) => `- [${src.title || src.url}](${src.url})${src.date ? ` — ${src.date}` : ""}`)
+        .join("\n");
+      return `## ${s.topic}\n\n${s.summary.trim()}${sourceList ? `\n\n${sourceList}` : ""}`;
+    })
+    .join("\n\n");
 }
