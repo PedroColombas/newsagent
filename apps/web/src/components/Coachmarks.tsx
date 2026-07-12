@@ -1,5 +1,4 @@
-import { useCallback, useLayoutEffect, useState } from "react";
-import type { CSSProperties } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 export interface Tip {
@@ -18,10 +17,10 @@ const MIN_ROOM = 130; // space (px) needed to honour a placement preference befo
 
 // Contextual coach-marks: a speech bubble that points at a real on-screen element, shown one tip at
 // a time. It's an ADDITION to the live page, not a modal — the layer is click-through so the user can
-// keep scrolling and tapping; the bubble simply travels with its target (and hides when the target
-// scrolls out of view). Tips are page-local and can be conditional — a tip whose target isn't present
-// (or whose `enabled` is false) is skipped for now and gets its turn on a later visit. Each dismissal
-// is reported via onSeen so it never shows again. Portaled to <body> to escape page-transition transforms.
+// keep scrolling and tapping; the bubble travels with its target (and hides when it scrolls out of
+// view). Following a scroll is done IMPERATIVELY (rAF-throttled, writing only a composited transform)
+// so it stays smooth. Tips are page-local and conditional — a tip whose target isn't present (or whose
+// `enabled` is false) is skipped now and gets its turn on a later visit. Portaled to <body>.
 export function Coachmarks({
   tips,
   seen,
@@ -37,102 +36,147 @@ export function Coachmarks({
     tips.filter((t) => t.enabled !== false && !seen.includes(t.key)),
   );
   const [idx, setIdx] = useState(0);
-  const [rect, setRect] = useState<DOMRect | null>(null);
-  const [vw, setVw] = useState(() => window.innerWidth);
-  const [vh, setVh] = useState(() => window.innerHeight);
+  const [side, setSide] = useState<"above" | "below" | null>(null); // null until the target is located
+
+  const bubbleRef = useRef<HTMLDivElement>(null);
+  const tailRef = useRef<HTMLDivElement>(null);
+  const dims = useRef({ w: 0, h: 0, tail: -1 }); // cached bubble size so scroll never re-reads it
 
   const tip = idx < batch.length ? batch[idx] : null;
+  const tipRef = useRef(tip);
+  tipRef.current = tip;
+  const sideRef = useRef<"above" | "below">("below");
 
-  // Measure the target, then keep the bubble pinned to it as the user scrolls or resizes. Retry
-  // briefly if the target renders a beat after mount; if it never appears, skip it (stays unseen).
+  // Reposition imperatively (no React re-render). Reads the target rect + cached bubble size and
+  // writes only `transform` (composited) — never a layout property — so a scroll stays smooth.
+  const follow = useCallback(() => {
+    const t = tipRef.current;
+    const bubble = bubbleRef.current;
+    if (!t || !bubble) return;
+    const el = document.querySelector(t.target);
+    if (!el) {
+      bubble.style.visibility = "hidden";
+      return;
+    }
+    const r = el.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    if (r.bottom < 8 || r.top > vh - 8) {
+      bubble.style.visibility = "hidden"; // target scrolled out of view — let the bubble go with it
+      return;
+    }
+    const { w, h } = dims.current;
+    const anchorTop = Math.max(r.top, MARGIN);
+    const anchorBottom = Math.min(r.bottom, vh - MARGIN);
+    let y = sideRef.current === "below" ? anchorBottom + GAP : anchorTop - GAP - h;
+    y = Math.min(Math.max(y, MARGIN), vh - MARGIN - h);
+    const targetCx = r.left + r.width / 2;
+    const centerX = Math.min(Math.max(targetCx, MARGIN + w / 2), vw - MARGIN - w / 2);
+    const x = centerX - w / 2;
+    bubble.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`;
+    bubble.style.visibility = "visible";
+    const tl = Math.min(Math.max(targetCx - x, 18), w - 18);
+    if (tailRef.current && tl !== dims.current.tail) {
+      tailRef.current.style.left = `${tl}px`;
+      dims.current.tail = tl;
+    }
+  }, []);
+
+  // (Re)measure the bubble (width is viewport-derived, height follows content), then place it.
+  const layout = useCallback(() => {
+    const bubble = bubbleRef.current;
+    if (!bubble) return;
+    const w = Math.min(window.innerWidth - MARGIN * 2, BUBBLE_MAX);
+    bubble.style.width = `${w}px`;
+    dims.current.w = w;
+    dims.current.h = bubble.offsetHeight;
+    dims.current.tail = -1; // force a tail reposition
+    follow();
+  }, [follow]);
+
+  // When the tip changes: locate its target, choose a side, then reveal the bubble.
   useLayoutEffect(() => {
+    setSide(null);
     if (!tip) return;
     let raf = 0;
     let tries = 0;
-    let found = false;
-    const remeasure = () => {
-      const el = document.querySelector(tip.target);
-      if (!el) return;
-      setRect(el.getBoundingClientRect());
-      setVw(window.innerWidth);
-      setVh(window.innerHeight);
-    };
-    const locate = () => {
+    const decide = () => {
       const el = document.querySelector(tip.target);
       if (el) {
-        found = true;
         el.scrollIntoView({ block: "nearest", inline: "nearest" });
-        remeasure();
+        const r = el.getBoundingClientRect();
+        const vh = window.innerHeight;
+        const roomBelow = vh - Math.min(r.bottom, vh - MARGIN);
+        const roomAbove = Math.max(r.top, MARGIN);
+        const autoBelow = roomBelow >= roomAbove;
+        let below = autoBelow;
+        if (tip.placement === "below") below = roomBelow >= MIN_ROOM || autoBelow;
+        else if (tip.placement === "above") below = roomAbove >= MIN_ROOM ? false : autoBelow;
+        sideRef.current = below ? "below" : "above";
+        setSide(below ? "below" : "above");
         return;
       }
-      if (tries++ < 12) raf = requestAnimationFrame(locate);
+      if (tries++ < 12) raf = requestAnimationFrame(decide);
       else setIdx((n) => n + 1); // give up on a missing target
     };
-    const onMove = () => {
-      if (found) remeasure();
-    };
-    locate();
-    window.addEventListener("scroll", onMove, true); // capture → catches inner scroll containers too
-    window.addEventListener("resize", onMove);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", onMove, true);
-      window.removeEventListener("resize", onMove);
-    };
+    decide();
+    return () => cancelAnimationFrame(raf);
   }, [tip]);
 
+  // Once the bubble is on the page (side set), place it and keep it pinned to the target.
+  useLayoutEffect(() => {
+    if (side === null) return;
+    layout();
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        follow();
+      });
+    };
+    window.addEventListener("scroll", onScroll, true); // capture → catches inner scroll containers too
+    window.addEventListener("resize", layout);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", layout);
+    };
+  }, [side, layout, follow]);
+
   const advance = useCallback(() => {
-    if (tip) onSeen([tip.key]);
-    setRect(null);
+    const t = tipRef.current;
+    if (t) onSeen([t.key]);
+    setSide(null);
     setIdx((n) => n + 1);
-  }, [tip, onSeen]);
+  }, [onSeen]);
 
   const skip = useCallback(() => {
     const remaining = batch.slice(idx).map((t) => t.key);
     if (remaining.length) onSeen(remaining);
+    setSide(null);
     setIdx(batch.length);
   }, [batch, idx, onSeen]);
 
-  if (!tip || !rect) return null;
-  // The bubble travels with its target — hide it while the target is scrolled out of view.
-  if (rect.bottom < 8 || rect.top > vh - 8) return null;
-
-  // Anchor to the visible slice of the target and put the bubble on the preferred side if it has
-  // room, else on whichever side has more — so it never lands off-screen or covers the feature.
-  const anchorTop = Math.max(rect.top, MARGIN);
-  const anchorBottom = Math.min(rect.bottom, vh - MARGIN);
-  const roomBelow = vh - anchorBottom;
-  const roomAbove = anchorTop;
-  const auto = roomBelow >= roomAbove; // default: whichever side has more room
-  let below = auto;
-  if (tip.placement === "below") below = roomBelow >= MIN_ROOM || auto;
-  else if (tip.placement === "above") below = roomAbove >= MIN_ROOM ? false : auto;
-
-  const bubbleW = Math.min(vw - MARGIN * 2, BUBBLE_MAX);
-  const targetCx = rect.left + rect.width / 2;
-  const centerX = Math.min(Math.max(targetCx, MARGIN + bubbleW / 2), vw - MARGIN - bubbleW / 2);
-  // Tail sits under the target's centre, clamped to stay within the bubble's rounded corners.
-  const tailLeft = Math.min(Math.max(targetCx - (centerX - bubbleW / 2), 18), bubbleW - 18);
-
-  const bubbleStyle: CSSProperties = { width: bubbleW, left: centerX, transform: "translateX(-50%)" };
-  if (below) bubbleStyle.top = anchorBottom + GAP;
-  else bubbleStyle.bottom = vh - anchorTop + GAP;
-
+  if (!tip || side === null) return null;
   const last = idx === batch.length - 1;
 
   return createPortal(
     // Click-through layer — the page underneath stays scrollable/tappable; only the bubble catches taps.
+    // The bubble carries no React-managed positioning styles; transform/width/visibility are set
+    // imperatively in layout()/follow() and survive re-renders (React only manages declared style keys).
     <div className="pointer-events-none fixed inset-0 z-[70]">
       <div
-        className="pointer-events-auto absolute rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[0_16px_40px_-12px_rgba(20,14,8,0.5)]"
-        style={bubbleStyle}
+        ref={bubbleRef}
+        className="pointer-events-auto absolute left-0 top-0 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[0_16px_40px_-12px_rgba(20,14,8,0.5)]"
       >
         {/* tail — a rotated square straddling the bubble edge, pointing at the target */}
         <div
+          ref={tailRef}
           className={`absolute h-3 w-3 rotate-45 border-[var(--line)] bg-[var(--surface)] ${
-            below ? "-top-1.5 border-l border-t" : "-bottom-1.5 border-b border-r"
+            side === "below" ? "-top-1.5 border-l border-t" : "-bottom-1.5 border-b border-r"
           }`}
-          style={{ left: tailLeft, marginLeft: -6 }}
+          style={{ marginLeft: -6 }}
         />
         <h3 className="text-[16px] font-bold tracking-tight">{tip.title}</h3>
         <p className="mt-1 text-[13.5px] leading-relaxed text-[var(--muted)]">{tip.body}</p>

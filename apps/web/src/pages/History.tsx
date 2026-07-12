@@ -164,6 +164,7 @@ export function History() {
             {
               key: "history-calendar",
               target: '[data-tour="history-calendar"]',
+              placement: "below", // sit under the calendar, pointing up
               title: "Every brief is saved",
               body: "Highlighted days have a brief — tap one to reopen it. Use the arrows to browse past months.",
             },
@@ -171,6 +172,7 @@ export function History() {
               key: "history-list",
               target: '[data-tour="history-row"]',
               enabled: reports.length > 0,
+              placement: "above", // sit above the cards (over the calendar), pointing down — never covers them
               title: "Open any day's brief",
               body: "Tap a card to read that day's brief. An accent bar marks unread ones; the mic icon means it has a podcast.",
             },
