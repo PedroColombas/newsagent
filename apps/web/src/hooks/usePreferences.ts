@@ -41,6 +41,9 @@ export function usePreferences() {
   const [status, setStatus] = useState<SaveStatus>("idle");
   // Only auto-save after the user actually edits — not on the initial load.
   const dirty = useRef(false);
+  // Latest prefs snapshot, so callbacks can read current state synchronously (see markTipsSeen).
+  const prefsRef = useRef(prefs);
+  prefsRef.current = prefs;
 
   useEffect(() => {
     if (!user) return;
@@ -97,23 +100,20 @@ export function usePreferences() {
 
   // Record dismissed coach-mark tips. Kept OUT of the generic auto-save (EDITABLE_COLUMNS) and
   // written directly so a failure — e.g. the tips_seen column not migrated yet — is swallowed and
-  // never blocks other preference saves (the tip just reappears next time).
+  // never blocks other preference saves. Reads the latest prefs via a ref and computes the merged
+  // set synchronously: a setState updater's result isn't available at the call site, so computing it
+  // there is the only way to guarantee the DB write fires — otherwise the dismissal wouldn't persist
+  // and the tip would reappear on the next visit.
   const markTipsSeen = useCallback(
     (keys: string[]) => {
-      if (!user || keys.length === 0) return;
-      let toWrite: string[] | null = null;
-      setPrefs((cur) => {
-        if (!cur) return cur;
-        const have = new Set(cur.tips_seen ?? []);
-        const merged = [...have];
-        for (const k of keys) if (!have.has(k)) merged.push(k);
-        if (merged.length === have.size) return cur; // nothing new
-        toWrite = merged;
-        return { ...cur, tips_seen: merged };
-      });
-      if (toWrite) {
-        void supabase.from("preferences").update({ tips_seen: toWrite }).eq("user_id", user.id);
-      }
+      const cur = prefsRef.current;
+      if (!user || !cur || keys.length === 0) return;
+      const have = new Set(cur.tips_seen ?? []);
+      const merged = [...have];
+      for (const k of keys) if (!have.has(k)) merged.push(k);
+      if (merged.length === have.size) return; // nothing new to persist
+      setPrefs((p) => (p ? { ...p, tips_seen: merged } : p));
+      void supabase.from("preferences").update({ tips_seen: merged }).eq("user_id", user.id);
     },
     [user],
   );
