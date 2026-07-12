@@ -263,6 +263,11 @@ function EditionPreview({
         </div>
       </div>
 
+      {sections.length === 0 && (
+        <p className="mt-4 text-center text-[12.5px] text-[var(--muted)]">
+          Add at least one topic to continue — go back and pick a subtopic or add your own.
+        </p>
+      )}
       <div className="flex items-center gap-3 pt-6">
         <button
           type="button"
@@ -274,7 +279,8 @@ function EditionPreview({
         <button
           type="button"
           onClick={onStart}
-          className="flex-1 rounded-2xl bg-[var(--accent)] py-3.5 text-[15px] font-semibold text-[var(--on-accent)]"
+          disabled={sections.length === 0}
+          className="flex-1 rounded-2xl bg-[var(--accent)] py-3.5 text-[15px] font-semibold text-[var(--on-accent)] disabled:opacity-40"
         >
           Start reading
         </button>
