@@ -2,6 +2,8 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useReports } from "../hooks/useReports";
 import type { ReportSummary } from "../hooks/useReports";
+import { usePreferences } from "../hooks/usePreferences";
+import { Coachmarks } from "../components/Coachmarks";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
 
@@ -32,6 +34,7 @@ function rowDateParts(date: string) {
 
 export function History() {
   const { reports, loading } = useReports();
+  const { prefs, markTipsSeen } = usePreferences();
   const navigate = useNavigate();
 
   const now = new Date();
@@ -93,7 +96,7 @@ export function History() {
           ))}
         </div>
 
-        <div className="mt-1.5 grid grid-cols-7 gap-y-1">
+        <div className="mt-1.5 grid grid-cols-7 gap-y-1" data-tour="history-calendar">
           {monthCells(view.year, view.month).map((day, i) => {
             if (day === null) return <span key={i} className="h-9" />;
             const dateStr = ymd(view.year, view.month, day);
@@ -124,7 +127,7 @@ export function History() {
             <div className="flex justify-center">
               <span className="h-1.5 w-9 rounded-full bg-[var(--line)]" />
             </div>
-            <div className="flex items-baseline justify-between py-3">
+            <div className="flex items-baseline justify-between py-3" data-tour="history-list">
               <span className="text-[11px] font-bold uppercase tracking-[1.2px] text-[var(--faint)]">
                 Recent reports
               </span>
@@ -147,6 +150,28 @@ export function History() {
           )}
         </div>
       </div>
+
+      {prefs && (
+        <Coachmarks
+          seen={prefs.tips_seen ?? []}
+          onSeen={markTipsSeen}
+          tips={[
+            {
+              key: "history-calendar",
+              target: '[data-tour="history-calendar"]',
+              title: "Every brief is saved",
+              body: "Highlighted days have a brief — tap one to reopen it. Use the arrows to browse past months.",
+            },
+            {
+              key: "history-list",
+              target: '[data-tour="history-list"]',
+              enabled: reports.length > 0,
+              title: "Your recent briefs",
+              body: "An accent bar marks unread ones; the mic icon means a brief has a podcast.",
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }

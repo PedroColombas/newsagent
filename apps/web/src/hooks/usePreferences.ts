@@ -95,5 +95,28 @@ export function usePreferences() {
     setPrefs((cur) => (cur ? { ...cur, ...patch } : cur));
   }, []);
 
-  return { prefs, loading, status, update };
+  // Record dismissed coach-mark tips. Kept OUT of the generic auto-save (EDITABLE_COLUMNS) and
+  // written directly so a failure — e.g. the tips_seen column not migrated yet — is swallowed and
+  // never blocks other preference saves (the tip just reappears next time).
+  const markTipsSeen = useCallback(
+    (keys: string[]) => {
+      if (!user || keys.length === 0) return;
+      let toWrite: string[] | null = null;
+      setPrefs((cur) => {
+        if (!cur) return cur;
+        const have = new Set(cur.tips_seen ?? []);
+        const merged = [...have];
+        for (const k of keys) if (!have.has(k)) merged.push(k);
+        if (merged.length === have.size) return cur; // nothing new
+        toWrite = merged;
+        return { ...cur, tips_seen: merged };
+      });
+      if (toWrite) {
+        void supabase.from("preferences").update({ tips_seen: toWrite }).eq("user_id", user.id);
+      }
+    },
+    [user],
+  );
+
+  return { prefs, loading, status, update, markTipsSeen };
 }

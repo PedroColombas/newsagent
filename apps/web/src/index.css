@@ -16,6 +16,31 @@
   }
 }
 
+/* Coach-mark highlight — a soft, gently-pulsing accent ring around the element a helper bubble
+   points at (no full-screen dim). Falls back to a static ring when reduced motion is preferred. */
+@keyframes coachPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px var(--accent),
+      0 0 0 5px color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px var(--accent),
+      0 0 0 11px color-mix(in srgb, var(--accent) 5%, transparent);
+  }
+}
+.coach-ring {
+  animation: coachPulse 1.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .coach-ring {
+    animation: none;
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+}
+
 /* Warm editorial palette. Light is primary; flips to dark with the system setting.
    Used via arbitrary values, e.g. bg-[var(--paper)] text-[var(--ink)] text-[var(--accent)]. */
 :root {

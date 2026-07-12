@@ -8,6 +8,7 @@ import { ReportStyleControls } from "../components/preferences/ReportStyleContro
 import { DeliveryTimeSelect } from "../components/preferences/DeliveryTimeSelect";
 import { TopicManager } from "../components/preferences/TopicManager";
 import { Toggle } from "../components/ui/Toggle";
+import { Coachmarks } from "../components/Coachmarks";
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
@@ -18,7 +19,7 @@ function SectionLabel({ children }: { children: ReactNode }) {
 }
 
 export function Preferences() {
-  const { prefs, loading, status, update } = usePreferences();
+  const { prefs, loading, status, update, markTipsSeen } = usePreferences();
   const { report } = useLatestReport();
   const [topicsChanged, setTopicsChanged] = useState(false);
   const [regen, setRegen] = useState<"idle" | "submitting" | "done">("idle");
@@ -85,7 +86,7 @@ export function Preferences() {
 
       {/* Your topics — each is a section; drag to reorder, tap to edit, or add */}
       <div className="flex flex-col gap-3">
-        <div className="px-1">
+        <div className="px-1" data-tour="prefs-topics">
           <SectionLabel>Your topics</SectionLabel>
           <p className="mt-1 text-[12.5px] text-[var(--muted)]">
             Each is a section in your brief. Drag to reorder, tap to edit, or add your own.
@@ -102,13 +103,13 @@ export function Preferences() {
       </div>
 
       {/* Report style */}
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5" data-tour="prefs-style">
         <SectionLabel>Report style</SectionLabel>
         <ReportStyleControls prefs={prefs} update={update} />
       </div>
 
       {/* Delivery time */}
-      <div className="flex items-center justify-between px-1">
+      <div className="flex items-center justify-between px-1" data-tour="prefs-delivery">
         <div className="flex flex-col gap-0.5">
           <span className="text-[14.5px] font-semibold">Delivery time</span>
           <span className="text-[12px] text-[var(--muted)]">When your brief lands each day, in your local time</span>
@@ -120,13 +121,44 @@ export function Preferences() {
       </div>
 
       {/* Daily podcast */}
-      <div className="flex items-center justify-between px-1">
+      <div className="flex items-center justify-between px-1" data-tour="prefs-podcast">
         <div className="flex flex-col gap-0.5">
           <span className="text-[14.5px] font-semibold">Daily podcast</span>
           <span className="text-[12px] text-[var(--muted)]">A conversational audio version of your report</span>
         </div>
         <Toggle checked={prefs.podcast_enabled} onChange={(podcast_enabled) => update({ podcast_enabled })} />
       </div>
+
+      <Coachmarks
+        seen={prefs.tips_seen ?? []}
+        onSeen={markTipsSeen}
+        tips={[
+          {
+            key: "prefs-topics",
+            target: '[data-tour="prefs-topics"]',
+            title: "Your topics",
+            body: "These are the sections of your brief. Drag to reorder, tap to edit, or add up to 8.",
+          },
+          {
+            key: "prefs-style",
+            target: '[data-tour="prefs-style"]',
+            title: "How it reads",
+            body: "Set the length — briefing, standard, or deep dive — and the tone it's written in.",
+          },
+          {
+            key: "prefs-delivery",
+            target: '[data-tour="prefs-delivery"]',
+            title: "Delivery time",
+            body: "Choose when your brief lands each morning, in your local time.",
+          },
+          {
+            key: "prefs-podcast",
+            target: '[data-tour="prefs-podcast"]',
+            title: "Daily podcast",
+            body: "Turn on an audio version and it'll appear on Today, ready to play.",
+          },
+        ]}
+      />
     </section>
   );
 }

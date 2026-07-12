@@ -18,7 +18,7 @@ import { usePlayer } from "../player/PlayerProvider";
 import type { PlayerEpisode } from "../player/PlayerProvider";
 import { PlayIcon } from "../components/ui/icons";
 import { RecapCard } from "../components/RecapCard";
-import { Walkthrough } from "../components/Walkthrough";
+import { Coachmarks } from "../components/Coachmarks";
 
 // If an on-demand generation hasn't landed in this long of FOREGROUND time (background time is
 // excluded — see the visibility handler), stop waiting and show an error + retry. Generous, since
@@ -28,7 +28,7 @@ const GEN_TIMEOUT_MS = 8 * 60 * 1000;
 export function Today() {
   const { user } = useAuth();
   const { report, episode, loading, refetch } = useLatestReport();
-  const { prefs, update } = usePreferences();
+  const { prefs, markTipsSeen } = usePreferences();
   const { play } = usePlayer();
   const navigate = useNavigate();
 
@@ -186,7 +186,7 @@ export function Today() {
       </span>
 
       {report.content.recap && (
-        <div className="mt-5">
+        <div className="mt-5" data-tour="recap">
           <RecapCard recap={report.content.recap} />
         </div>
       )}
@@ -270,9 +270,35 @@ export function Today() {
         ))}
       </div>
 
-      {/* First-run coach marks — fire once the first brief is on screen (real elements to point at). */}
-      {prefs && !prefs.walkthrough_seen && (
-        <Walkthrough onFinish={() => update({ walkthrough_seen: true })} />
+      {/* Contextual coach marks — fire once the first brief is on screen (real elements to point at).
+          Recap + podcast tips are conditional: they only appear when those cards are actually here. */}
+      {prefs && (
+        <Coachmarks
+          seen={prefs.tips_seen ?? []}
+          onSeen={markTipsSeen}
+          tips={[
+            {
+              key: "today-brief",
+              target: '[data-tour="topic"]',
+              title: "This is your brief",
+              body: "Each card is a topic you chose, rewritten from today's news. Tap any card to read it in full.",
+            },
+            {
+              key: "today-recap",
+              target: '[data-tour="recap"]',
+              enabled: !!report.content.recap,
+              title: "While you were away",
+              body: "When you've been away, your brief opens with a quick catch-up on what you missed.",
+            },
+            {
+              key: "today-podcast",
+              target: '[data-tour="podcast"]',
+              enabled: !!playable,
+              title: "Listen, don't just read",
+              body: "Your brief as a conversation — tap to play, or expand it for chapters and speed.",
+            },
+          ]}
+        />
       )}
     </section>
   );
