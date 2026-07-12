@@ -14,7 +14,6 @@ import {
   estimateReadMinutes,
   snippet,
 } from "../lib/report-format";
-import { SAMPLE_SECTIONS } from "../lib/sample-report";
 import { usePlayer } from "../player/PlayerProvider";
 import type { PlayerEpisode } from "../player/PlayerProvider";
 import { PlayIcon } from "../components/ui/icons";
@@ -147,9 +146,7 @@ export function Today() {
   }
 
   if (waiting) {
-    // First brief (no content yet) → show a labelled sample so a new user sees the format while it
-    // generates. A regeneration (old content still present) → the plain compiling screen.
-    return report?.content ? <CompilingBrief /> : <SampleBrief />;
+    return <CompilingBrief />;
   }
 
   if (!report) {
@@ -157,7 +154,7 @@ export function Today() {
   }
 
   if (report.status !== "complete" || !report.content) {
-    return report.content ? <CompilingBrief /> : <SampleBrief />;
+    return <CompilingBrief />;
   }
 
   const sections = report.content.sections;
@@ -310,7 +307,7 @@ function EmptyState({
       >
         Generate today's brief
       </button>
-      <p className="mt-3 text-[12px] text-[var(--faint)]">Takes a couple of minutes.</p>
+      <p className="mt-3 text-[12px] text-[var(--faint)]">Takes about 3–4 minutes.</p>
     </Centered>
   );
 }
@@ -329,54 +326,14 @@ function LoadingBars() {
   );
 }
 
-// Shown while a brand-new user's FIRST brief generates — a labelled sample so they see the format
-// immediately instead of staring at a spinner. The real brief replaces this automatically (polling).
-function SampleBrief() {
-  return (
-    <section className="px-6 pb-12 pt-6">
-      <div className="flex items-center gap-3 rounded-2xl border border-[var(--accent)]/40 bg-[var(--accent)]/8 px-4 py-3">
-        <LoadingBars />
-        <div className="flex flex-col">
-          <span className="text-[13.5px] font-semibold text-[var(--ink)]">Preparing your first brief…</span>
-          <span className="text-[12px] text-[var(--muted)]">
-            Here's a sample meanwhile — yours appears here automatically, usually within a few minutes.
-          </span>
-        </div>
-      </div>
-
-      <span className="mt-6 block text-[12px] font-semibold uppercase tracking-[1.8px] text-[var(--muted)]">
-        Sample brief
-      </span>
-      <h1 className="mt-2 text-[26px] font-bold leading-tight tracking-tight">A taste of what yours will look like</h1>
-
-      <div className="mt-4 flex flex-col opacity-90">
-        {SAMPLE_SECTIONS.map((s, i) => (
-          <div key={i} className="flex flex-col gap-2 border-t border-[var(--line)] py-5">
-            <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 flex-none rounded-full bg-[var(--accent)]" />
-              <span className="text-[11.5px] font-semibold uppercase tracking-[1.4px] text-[var(--muted)]">
-                {s.category}
-              </span>
-            </div>
-            <h2 className="text-[20px] font-semibold leading-snug tracking-tight">{s.topic}</h2>
-            <p className="hyphens-auto text-justify text-[15px] leading-relaxed text-[var(--ink)]/85">
-              {snippet(s.summary)}
-            </p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function CompilingBrief() {
   return (
     <Centered>
       <LoadingBars />
       <h1 className="mt-5 text-[22px] font-bold tracking-tight">Compiling your brief…</h1>
       <p className="mt-2 max-w-[280px] text-[14px] leading-relaxed text-[var(--muted)]">
-        Gathering today's news and writing it up — usually ready in a minute or two, and it'll
-        appear here on its own.
+        Gathering today's news and writing it up — this usually takes about 3–4 minutes, and it'll
+        appear here on its own. You can leave this screen; it'll be here when you're back.
       </p>
     </Centered>
   );

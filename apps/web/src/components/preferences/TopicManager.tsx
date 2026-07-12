@@ -238,13 +238,16 @@ function TopicEditSheet({
                 update(removeEntry(prefs, entry));
                 onClose();
               }}
-              className="text-[14px] font-semibold text-red-600 dark:text-red-400"
+              className="rounded-full border border-red-500/40 px-4 py-2 text-[14px] font-semibold text-red-600 active:bg-red-500/10 dark:border-red-400/40 dark:text-red-400"
             >
               Remove
             </button>
           )}
           <div className="flex-1" />
-          <button onClick={onClose} className="px-2 py-2 text-[14px] font-semibold text-[var(--muted)]">
+          <button
+            onClick={onClose}
+            className="rounded-full px-4 py-2 text-[14px] font-semibold text-[var(--muted)] active:bg-[var(--line)]/50"
+          >
             Cancel
           </button>
           <button

@@ -11,7 +11,7 @@ import { CustomInterestsEditor } from "../components/preferences/CustomInterests
 import { ReportStyleControls } from "../components/preferences/ReportStyleControls";
 import { Toggle } from "../components/ui/Toggle";
 import { WelcomeScreen } from "../components/WelcomeScreen";
-import { TopicOrderList } from "../components/preferences/TopicOrderList";
+import { TopicManager } from "../components/preferences/TopicManager";
 
 const STEPS = [
   { title: "Pick your areas", subtitle: "Broad areas to explore — you'll choose specific topics next. Up to five." },
@@ -220,7 +220,7 @@ function EditionPreview({
         <span className="text-[12px] font-bold uppercase tracking-[0.8px] text-[var(--accent)]">All set</span>
         <h1 className="mt-3 text-[25px] font-bold leading-tight tracking-tight">Here's tomorrow's edition</h1>
         <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--muted)]">
-          Your brief will run {sections.length} {sections.length === 1 ? "section" : "sections"}. Drag to reorder, or delete any you don't want.
+          Here's what your brief will cover. Drag to reorder, tap to edit, or remove any you don't want.
         </p>
         <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
           <SpecRow label="Format" value={mode?.label} hint={mode?.hint} />
@@ -259,7 +259,7 @@ function EditionPreview({
           In this edition
         </span>
         <div className="mt-3">
-          <TopicOrderList prefs={prefs} update={update} />
+          <TopicManager prefs={prefs} update={update} />
         </div>
       </div>
 
