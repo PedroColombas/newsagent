@@ -8,6 +8,12 @@ export type Voice = 'neutral' | 'analytical' | 'conversational' | 'critical';
 export type ReportStatus = 'pending' | 'generating' | 'complete' | 'failed';
 export type PodcastStatus = 'pending' | 'generating' | 'complete' | 'failed';
 
+// Subscription tier + status (mirrors the subscriptions table / Stripe status). Tier CAPABILITIES
+// (cadence, podcast, price) live in ./tiers.
+export type Tier = 'free' | 'text' | 'studio';
+export type SubscriptionStatus =
+  | 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'unpaid';
+
 // News recency window. Maps to Perplexity's search_recency_filter
 // (day = 24h, week = 7d, month = 30d).
 export type Recency = 'day' | 'week' | 'month';
@@ -35,6 +41,19 @@ export interface Preferences {
   walkthrough_seen: boolean;      // deprecated — superseded by tips_seen (kept for back-compat)
   tips_seen: string[];            // keys of one-time coach-mark tips the user has dismissed
   topic_order: string[];          // user-chosen section order (keys); [] = specific-first default
+  updated_at: string;
+}
+
+// Subscription / billing row (see migration 0013). Written only by the Stripe webhook; clients read.
+export interface Subscription {
+  user_id: string;
+  tier: Tier;
+  status: SubscriptionStatus;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  current_period_end: string | null;   // ISO; access valid until here. null = no Stripe expiry (free)
+  cancel_at_period_end: boolean;
+  trial_end: string | null;
   updated_at: string;
 }
 
