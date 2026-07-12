@@ -1,5 +1,6 @@
 import { requireEnv } from "./env";
 import { chunkText, type DialogueTurn } from "./openai-tts";
+import { mapWithConcurrency } from "./concurrency";
 
 // ElevenLabs TTS — the v2 quality path (CLAUDE.md). Same shape as openai-tts: one voice per
 // speaker, one request per turn, segments concatenated in order. Uses the REST endpoint directly
@@ -57,24 +58,6 @@ async function synthesizeOne(text: string, voice: ElevenVoice): Promise<Buffer> 
     throw new Error(`ElevenLabs TTS ${res.status}: ${detail.slice(0, 300)}`);
   }
   return Buffer.from(await res.arrayBuffer());
-}
-
-// Run an async fn over items with a bounded number in flight, preserving input order in the results.
-async function mapWithConcurrency<T, R>(
-  items: T[],
-  limit: number,
-  fn: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const results = new Array<R>(items.length);
-  let cursor = 0;
-  async function worker(): Promise<void> {
-    while (cursor < items.length) {
-      const i = cursor++;
-      results[i] = await fn(items[i]);
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, () => worker()));
-  return results;
 }
 
 // Synthesise a dialogue: each turn spoken in its speaker's voice, segments concatenated in order.

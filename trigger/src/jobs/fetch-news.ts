@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { anthropic, MODELS, firstText } from "../lib/anthropic";
 import { perplexitySearch } from "../lib/perplexity";
 import { withDiagnostics } from "../lib/diagnostics";
+import { mapWithConcurrency, withRetry } from "../lib/concurrency";
 import { generateReport } from "./generate-report";
 import { planReportSections, type PlannedTopic } from "../../../shared/plan-topics";
 import type { Preferences, Recency, ReportSource } from "@shared/types";
@@ -22,6 +23,9 @@ export interface FetchedTopic extends TopicQuery {
   content: string; // Perplexity's synthesised answer
   sources: ReportSource[]; // dated citations
 }
+
+// Bounded parallelism for the per-topic Perplexity fetch — fast without tripping rate limits.
+const PERPLEXITY_CONCURRENCY = 4;
 
 export const fetchNews = task({
   id: "fetch-news",
@@ -93,23 +97,29 @@ export const fetchNews = task({
         windows: topics.map((t) => `${t.topic}:${t.recency}${t.isPrimer ? ":primer" : ""}`),
       });
 
-      // One Perplexity query per topic. Canonical topics (genre/subtopic, non-primer) share one
-      // result per (topic, day) via topic_news_cache across ALL users and delivery hours; custom
-      // interests + first-time primers stay per-user. Sequential keeps us under rate limits.
-      const fetched: FetchedTopic[] = [];
-      for (const t of topics) {
-        const shareable = (t.level === 1 || t.level === 2) && !t.isPrimer;
-        const result = shareable
-          ? await getCachedOrFetch(t, date)
-          : await withDiagnostics(`perplexity:${t.topic}`, () =>
-              perplexitySearch(t.query, {
-                recency: t.recency,
-                system: SYSTEM_PROMPT,
-                contextSize: t.isPrimer ? "high" : "medium",
-              }),
-            );
-        fetched.push({ ...t, content: result.content, sources: result.sources });
-      }
+      // One Perplexity query per topic, run with bounded concurrency (was sequential — the slow part
+      // of a first brief). Canonical topics (genre/subtopic, non-primer) share one result per
+      // (topic, day) via topic_news_cache across ALL users; custom interests + first-time primers
+      // stay per-user. withRetry rides out a transient 429 from parallel calls. Order is preserved.
+      const fetched: FetchedTopic[] = await mapWithConcurrency(
+        topics,
+        PERPLEXITY_CONCURRENCY,
+        async (t) => {
+          const shareable = (t.level === 1 || t.level === 2) && !t.isPrimer;
+          const result = shareable
+            ? await getCachedOrFetch(t, date)
+            : await withRetry(() =>
+                withDiagnostics(`perplexity:${t.topic}`, () =>
+                  perplexitySearch(t.query, {
+                    recency: t.recency,
+                    system: SYSTEM_PROMPT,
+                    contextSize: t.isPrimer ? "high" : "medium",
+                  }),
+                ),
+              );
+          return { ...t, content: result.content, sources: result.sources };
+        },
+      );
       logger.info("fetched all topics", { userId, count: fetched.length });
 
       // Hand off to synthesis (fire-and-forget; generate-report owns the reports row).
@@ -164,8 +174,10 @@ async function getCachedOrFetch(
     return { content: hit.content as string, sources: (hit.sources ?? []) as ReportSource[] };
   }
 
-  const result = await withDiagnostics(`perplexity:${t.topic}`, () =>
-    perplexitySearch(t.query, { recency: t.recency, system: SYSTEM_PROMPT, contextSize: "medium" }),
+  const result = await withRetry(() =>
+    withDiagnostics(`perplexity:${t.topic}`, () =>
+      perplexitySearch(t.query, { recency: t.recency, system: SYSTEM_PROMPT, contextSize: "medium" }),
+    ),
   );
   // Populate the shared cache. ignoreDuplicates → if another user won the race, keep their row.
   const { error: writeErr } = await db
