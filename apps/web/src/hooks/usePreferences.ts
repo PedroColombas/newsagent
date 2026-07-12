@@ -113,7 +113,19 @@ export function usePreferences() {
       for (const k of keys) if (!have.has(k)) merged.push(k);
       if (merged.length === have.size) return; // nothing new to persist
       setPrefs((p) => (p ? { ...p, tips_seen: merged } : p));
-      void supabase.from("preferences").update({ tips_seen: merged }).eq("user_id", user.id);
+      // A Supabase query only executes when awaited — fire it and swallow failures (best-effort, so a
+      // missing column etc. never blocks the UI). Without the await the request is never even sent.
+      void (async () => {
+        try {
+          const { error } = await supabase
+            .from("preferences")
+            .update({ tips_seen: merged })
+            .eq("user_id", user.id);
+          if (error) console.warn("Couldn't save tips_seen:", error.message);
+        } catch (err) {
+          console.warn("Couldn't save tips_seen:", err);
+        }
+      })();
     },
     [user],
   );
