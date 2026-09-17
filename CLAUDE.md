@@ -40,10 +40,16 @@ not an afterthought.
 - **Multi-user** from day one, Supabase Auth, RLS on every table.
 - **Weekday cadence** — automatic briefs Mon–Fri only; Monday's brief sweeps up the weekend
   (wider news window). No Sat/Sun auto-briefs. On-demand "generate now" exists and works any day.
+  ⚠️ **The cron is currently DISABLED for cost control** (BACKLOG Phase 0) — generation is on-demand
+  only. Re-enable by restoring the `cron` in `daily-report.ts` AND setting `ENABLE_DAILY_CRON=true`
+  in the Trigger env.
 - **Text-to-speech: OpenAI only** (`gpt-4o-mini-tts`). ElevenLabs was trialled and dropped (not
   worth the cost); its code path is kept dormant in `trigger/src/lib/tts.ts` behind a flag.
-- **Synthesis model routes by report mode** — Sonnet 4.6 for briefing/standard, Opus 4.8 for
-  deep_dive (`MODELS.synthesis` / `synthesisDeepDive`).
+- **Podcast generation is an explicit user action**, never automatic — it is the most expensive step.
+  The app requests it per report via `POST /api/podcast`; `generate-report` no longer chains into it.
+- **Synthesis model** — Opus 4.8 for ALL modes (`MODELS.synthesis` / `synthesisDeepDive`). Routing
+  briefing/standard to Sonnet 4.6 was tried as a cost saving and reverted — it stubbed sections on
+  primer-heavy first briefs. The routing hook remains if it's revisited with a proper before/after.
 - Audio stored in **Supabase Storage**, private bucket, namespaced
   `podcast-audio/{user_id}/{report_id}.mp3`.
 - **One Perplexity query per topic** (not one composite). This determines report
@@ -60,10 +66,10 @@ not an afterthought.
 3. **Custom interests** — free-text natural language; also sections. At pipeline time a cheap Claude
    call translates each into a Perplexity search query, interpreted fresh each run so it stays topical.
 
-A brief = subtopics + custom interests only (see `planReportSections`). **Hard cap of 8 total topics**
-(`MAX_TOPICS`, subtopics + custom) with a live count — more slows generation + runs up cost. (This
-reinstates a cap after the earlier "your topic list IS your brief" experiment; user testing showed
-10–12-topic briefs were too slow/expensive.)
+A brief = subtopics + custom interests only (see `planReportSections`). **Hard cap of 4 total topics**
+(`MAX_SECTIONS` in `shared/plan-topics.ts`, re-exported as `MAX_TOPICS` for the UI) with a live count.
+The cap is enforced in the SHARED planner, so the pipeline can't exceed it either — every section is a
+paid Perplexity query plus synthesis tokens. (Was 8; dropped to 4 for cost control, BACKLOG Phase 0.)
 
 Plus: **exclusions** (free text, injected into the Claude summarisation prompt),
 **report_mode**, **voice**, **delivery_hour** (UTC). The `max_topics` DB column is now unused.

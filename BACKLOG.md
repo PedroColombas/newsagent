@@ -1,0 +1,184 @@
+# BACKLOG.md — Daily Brief
+
+Execution ordered backlog. Work top to bottom. Do not jump phases.
+
+## The goal this backlog serves
+
+Daily Brief is going on a CV. The target is not a production SaaS; it is an
+artifact that proves competence to a recruiter who will look at it for ninety
+seconds and then move on.
+
+The test: a recruiter clicks a link and within two minutes understands what was
+built, how it works, and that the author can take an AI system from idea to
+running software.
+
+Anything that does not serve that test is deferred, however interesting it is.
+Billing, source selection, robustness, and polish beyond the demo path are all
+out of scope until applications are sent.
+
+Two constraints shape everything below:
+
+1. **Cost.** API spend currently exhausts the budget with two or three users.
+   Nothing in the demo path may trigger a paid API call.
+2. **Access.** A recruiter will not create an account. The demo must require no
+   email, no signup, and no waiting on a magic link.
+
+---
+
+## Phase 0 — Stop the token burn
+
+Do this first. It is the only item actively costing money right now.
+
+* [x] Disable the weekday cron. Live testers switch to on demand generation only.
+* [x] Drop the default section cap from 8 to 4.
+* [x] Make podcast generation an explicit user action, never automatic.
+
+Notes: the cron is generating briefs for users who may never open the app. That
+is the bulk of the spend. Turning it off solves most of the problem on its own.
+
+---
+
+## Phase 1 — Know what was built
+
+Do this before seeding demo content. Seeding forces a walk through the whole
+app, and that is much easier once every feature is understood.
+
+* [ ] Read the code for the **primer** feature. Write one plain sentence
+      describing what it does. Add it to this file under "Feature glossary".
+* [ ] Do the same for any other feature that could not be explained under
+      questioning. Candidates: "what you missed" recap, chapter generation,
+      local time delivery handling.
+* [ ] Scan the **full git history** for secrets, not just the working tree.
+      Keys removed in a later commit are still present in history.
+
+Rationale: an interviewer asking "what does this do" and getting a vague answer
+costs more than a missing feature ever would.
+
+---
+
+## Phase 2 — Demo mode
+
+Approach: **reuse the existing app, do not fork it.** A parallel build drifts,
+doubles every fix, and stops resembling the real product within a week. One
+codebase that knows when it is being shown to a stranger.
+
+* [ ] Create a single demo user in the existing Supabase project.
+* [ ] Seed 3 to 4 briefs across varied topic sets, so the demo shows range
+      (e.g. one tech heavy, one geopolitics, one mixed with custom interests).
+* [ ] Generate and store one podcast episode for the demo account, audio already
+      in the storage bucket.
+* [ ] Add an `is_demo` flag on the user or preferences record.
+* [ ] Gate **every paid API call** behind that flag in one place, not scattered
+      through the codebase. Blocked for demo: "Generate now", podcast
+      generation, any cron inclusion. If the credentials leak and someone
+      hammers the button, nothing should happen.
+* [ ] Build the "View demo" sign in path using fixed credentials, not magic
+      link. These credentials are effectively public; that is acceptable.
+* [ ] Add a persistent demo banner: sample briefs, generation disabled.
+* [ ] Nightly Trigger.dev job to reset demo preferences to a clean state.
+
+Design decision: preferences remain **editable** in demo mode. Customisation is
+the core of the product and a recruiter should be able to click through genres,
+subtopics, and custom interests. Existing RLS already makes reports and podcast
+episodes read only from the frontend, so preferences are the only writable
+surface.
+
+Failure mode to avoid: a visitor edits preferences, presses a dead generate
+button, and concludes the app is broken. Handle with banner copy, not logic.
+
+---
+
+## Phase 3 — UX fixes visible in the demo
+
+Only fixes a demo visitor will actually see. Everything else waits.
+
+* [ ] Remove style and tone options from the settings page.
+* [ ] Fix the catch up icon on new topics. Relabel to "New topic". Add a bubble.
+* [ ] Add a bubble for the "what you missed" feature, first occurrence only.
+      Skip if it does not surface in the demo flow.
+
+---
+
+## Phase 4 — The shopfront
+
+The landing page becomes the CV link, not the app itself. A recruiter needs
+framing before they need the product.
+
+* [ ] Architecture diagram. This carries more weight than the running app: it
+      shows a multi stage pipeline across orchestration, retrieval, synthesis,
+      and audio generation in three seconds.
+* [ ] Short screen recording (roughly 15 to 30 seconds) covering the brief view
+      and the podcast player docking. Nobody will sit and listen to audio in a
+      browser tab; a clip communicates it instantly.
+* [ ] Landing page: problem, screenshots or the recording, architecture diagram,
+      stack, and two buttons: **Try the demo** and **View code**.
+* [ ] Domain decision: own domain (roughly 10 euros a year, reads as more
+      considered on a CV) or a route on the existing Vercel project.
+
+---
+
+## Phase 5 — GitHub
+
+* [ ] Write the README. This is the deliverable, not the code. Most readers will
+      read the README and skim two files. It carries:
+      * the architecture diagram
+      * the pipeline explanation, stage by stage
+      * reasoning behind each stack choice (why Perplexity over NewsAPI, why
+        Trigger.dev, why Supabase)
+      * an honest roadmap of what is not built yet
+* [ ] Light tidy only: dead code, naming, folder coherence. **No refactors.**
+      Legible and honestly described beats immaculate.
+* [ ] Publish the repository.
+* [ ] Wire the landing page "View code" button to it.
+
+The roadmap section is where user selected sources and billing belong. Listing
+them reads as product judgement, not as a gap.
+
+---
+
+## Phase 6 — Apply
+
+* [ ] Point the CV link at the landing page, not the app.
+* [ ] LinkedIn updates.
+
+---
+
+## Deferred until applications are out
+
+Not abandoned. Just not before the CV goes out.
+
+* User selected Perplexity sources (genuinely interesting design work; belongs
+  in the README roadmap)
+* Stripe billing
+* Full coding best practice audit
+* Full design and UX audit
+* Dedicated staging environment (Vercel preview deployments per branch already
+  cover this in practice)
+* n8n. It is a visual workflow automation tool in the same category as
+  Trigger.dev for these purposes. Rebuilding a working pipeline on it gains
+  nothing a recruiter can see. Worth learning separately, on a different
+  project, after applying.
+* ElevenLabs voice upgrade
+
+---
+
+## Feature glossary
+
+Fill during Phase 1. One sentence per feature, written to be readable out loud
+in an interview.
+
+* **Primer** — (to fill)
+* **What you missed recap** — (to fill)
+* **Chapters** — (to fill)
+
+---
+
+## Timeline
+
+* Phases 0 and 1: one evening
+* Phase 2: two to three sessions, the substantial piece
+* Phases 3 to 5: a few evenings
+* Applications out inside two weeks
+
+The version of this app that gets interviews is the one on the CV next month,
+not the one that is production ready in March.

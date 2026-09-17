@@ -7,9 +7,19 @@ import { fetchNews } from "./fetch-news";
 // every hour; each tick fans out to the users whose delivery_hour == this hour.
 export const dailyReport = schedules.task({
   id: "daily-report",
-  cron: "0 * * * *", // every hour on the hour, UTC
+  // CRON DISABLED (cost control, 2026-09). Automatic briefs are off — generation is on-demand only
+  // from the app. The task stays deployed and manually triggerable; re-enable by uncommenting.
+  // cron: "0 * * * *", // every hour on the hour, UTC
   maxDuration: 120,
   run: async (payload) => {
+    // Belt-and-braces with the commented-out cron above: even if a schedule survives in the Trigger
+    // dashboard from an earlier deploy, this does nothing and spends nothing. Set
+    // ENABLE_DAILY_CRON=true in the Trigger env (and restore the cron) to turn automatic briefs on.
+    if (process.env.ENABLE_DAILY_CRON !== "true") {
+      logger.info("automatic briefs are disabled — skipping tick");
+      return { skipped: "cron-disabled" };
+    }
+
     const scheduledAt = new Date(payload.timestamp);
     const hour = scheduledAt.getUTCHours();
     const date = scheduledAt.toISOString().slice(0, 10); // YYYY-MM-DD (UTC)

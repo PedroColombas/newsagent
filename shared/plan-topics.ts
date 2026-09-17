@@ -1,5 +1,12 @@
 import type { Preferences } from "./types";
 
+/**
+ * Hard cap on sections per brief. Enforced HERE rather than only in the UI, so the PIPELINE can
+ * never generate more than this — every section costs a Perplexity query plus synthesis tokens.
+ * (Dropped 8 -> 4 for cost control; see BACKLOG Phase 0.)
+ */
+export const MAX_SECTIONS = 4;
+
 export interface PlannedTopic {
   topic: string; // section label (raw interest text for L3 — the pipeline sharpens it later)
   level: 1 | 2 | 3; // 1 genre · 2 subtopic · 3 custom interest
@@ -48,7 +55,9 @@ export function planReportSections(prefs: Preferences): PlannedTopic[] {
     const rank = new Map(order.map((k, i) => [k, i] as const));
     topics.sort((a, b) => (rank.get(sectionKey(a)) ?? Infinity) - (rank.get(sectionKey(b)) ?? Infinity));
   }
-  return topics;
+  // Cap the brief (cost control). The order resolved above decides which sections survive, so the
+  // user's manual drag-order doubles as their priority.
+  return topics.slice(0, MAX_SECTIONS);
 }
 
 /** Total sections a brief will contain — subtopics + custom interests (genres are containers). */

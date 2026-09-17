@@ -74,3 +74,21 @@ export async function requestTodayBrief(force = false): Promise<void> {
   });
   if (!res.ok) throw new Error(`generate failed: ${res.status}`);
 }
+
+/**
+ * Ask the backend to generate the podcast for ONE report. Podcast generation is an explicit user
+ * action (never automatic) so audio — the priciest step — is only ever produced on request. The
+ * server verifies the session AND that the report belongs to the caller before triggering.
+ */
+export async function requestPodcast(reportId: string): Promise<void> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Not signed in");
+
+  const res = await fetch("/api/podcast", {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ reportId }),
+  });
+  if (!res.ok) throw new Error(`podcast request failed: ${res.status}`);
+}

@@ -9,6 +9,7 @@ import { DeliveryTimeSelect } from "../components/preferences/DeliveryTimeSelect
 import { TopicManager } from "../components/preferences/TopicManager";
 import { Toggle } from "../components/ui/Toggle";
 import { Coachmarks } from "../components/Coachmarks";
+import { MAX_TOPICS } from "../lib/preferences-options";
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
@@ -138,7 +139,7 @@ export function Preferences() {
             target: '[data-tour="prefs-topics"]',
             placement: "below", // sit under the topic cards, pointing up, so it never covers them
             title: "Your topics",
-            body: "These are the sections of your brief. Drag to reorder, tap to edit, or add up to 8.",
+            body: `These are the sections of your brief. Drag to reorder, tap to edit, or add up to ${MAX_TOPICS}.`,
           },
           {
             key: "prefs-style",

@@ -1,11 +1,13 @@
 import type { ReportMode, Voice, ContextDepth } from "@shared/types";
+import { MAX_SECTIONS } from "@shared/plan-topics";
 
 // App-enforced limits (the DB is permissive; these shape the UI).
 export const MAX_GENRES = 5;
 export const MAX_INTERESTS = 5;
 // Hard cap on total report topics (subtopics + custom interests). More than this slows generation
 // and runs up cost, so it's a firm limit with a visible count. Genres are containers, not topics.
-export const MAX_TOPICS = 8;
+// Mirrors the pipeline's cap, so the UI and the generated brief can never disagree.
+export const MAX_TOPICS = MAX_SECTIONS;
 
 // Level-1 genres. The core set from CLAUDE.md first, then a wider tail.
 export const GENRES = [

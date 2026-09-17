@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { useLatestReport } from "../hooks/useLatestReport";
 import { usePreferences } from "../hooks/usePreferences";
-import { requestTodayBrief } from "../lib/api";
+import { requestTodayBrief, requestPodcast } from "../lib/api";
 import { markPending, readPending, clearPending } from "../lib/pending-generation";
 import { formatDeliveryHour } from "../lib/delivery-time";
 import {
@@ -42,6 +42,8 @@ export function Today() {
   // created_at of the report we superseded when we kicked off — lets us tell this run's failure
   // apart from a stale one (server-vs-server, immune to clock skew and the visibility bump).
   const [baseline, setBaseline] = useState<string | null>(bridge?.baseline ?? null);
+  // Optimistic flag covering the gap between asking for a podcast and its episode row appearing.
+  const [podcastStarting, setPodcastStarting] = useState(false);
 
   const waiting =
     generating || report?.status === "pending" || report?.status === "generating";
@@ -62,12 +64,20 @@ export function Today() {
     report?.status === "failed" &&
     (startedAt == null || report.created_at !== baseline);
 
-  // The podcast is generated after the report completes, so the audio lags the brief. Show a
-  // loading state (and keep polling) while it's on its way.
+  // A requested podcast is on its way. This REQUIRES an episode row: now that generation is never
+  // automatic, "no episode" means "not asked for yet" rather than "coming soon" — otherwise the
+  // loading card (and its poll) would spin forever on every brief.
   const podcastPending =
     !!prefs?.podcast_enabled &&
     report?.status === "complete" &&
-    (!episode || episode.status === "pending" || episode.status === "generating");
+    !!episode &&
+    (episode.status === "pending" || episode.status === "generating");
+
+  // Offer to make one once the brief is done and there's no episode yet (or the last try failed).
+  const canMakePodcast =
+    !!prefs?.podcast_enabled &&
+    report?.status === "complete" &&
+    (!episode || episode.status === "failed");
 
   // Drop the optimistic flag once the brief actually completes.
   useEffect(() => {
@@ -85,12 +95,17 @@ export function Today() {
     if (failedIsCurrent) setGenerating(false);
   }, [failedIsCurrent]);
 
-  // Poll while a brief is compiling, or while its podcast is still being generated.
+  // Poll while a brief is compiling, or while a requested podcast is still being generated.
   useEffect(() => {
-    if (!waiting && !podcastPending) return;
+    if (!waiting && !podcastPending && !podcastStarting) return;
     const t = setInterval(() => void refetch(), 4000);
     return () => clearInterval(t);
-  }, [waiting, podcastPending, refetch]);
+  }, [waiting, podcastPending, podcastStarting, refetch]);
+
+  // Once the episode row exists its real status drives the UI — drop the optimistic flag.
+  useEffect(() => {
+    if (episode) setPodcastStarting(false);
+  }, [episode]);
 
   // Safety net: if a generation never lands, stop waiting and surface an error.
   useEffect(() => {
@@ -132,6 +147,18 @@ export function Today() {
       setGenerating(false);
       setGenError(true);
       clearPending();
+    }
+  }
+
+  // Explicit, user-initiated podcast generation — never automatic, since audio is the most
+  // expensive step in the pipeline.
+  async function makePodcast() {
+    if (!report) return;
+    setPodcastStarting(true);
+    try {
+      await requestPodcast(report.id);
+    } catch {
+      setPodcastStarting(false);
     }
   }
 
@@ -215,7 +242,7 @@ export function Today() {
             ))}
           </span>
         </button>
-      ) : podcastPending ? (
+      ) : podcastPending || podcastStarting ? (
         <div
           data-tour="podcast"
           className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3"
@@ -236,6 +263,24 @@ export function Today() {
             <span className="text-[12.5px] text-[var(--muted)]">The audio version is on its way</span>
           </span>
         </div>
+      ) : canMakePodcast ? (
+        <button
+          onClick={() => void makePodcast()}
+          data-tour="podcast"
+          className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface)] p-3 text-left active:opacity-70"
+        >
+          <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[var(--accent)]/12 text-[var(--accent)]">
+            <MicIcon />
+          </span>
+          <span className="flex flex-1 flex-col">
+            <span className="text-[15px] font-semibold">
+              {episode?.status === "failed" ? "Try the podcast again" : "Make today's podcast"}
+            </span>
+            <span className="text-[12.5px] text-[var(--muted)]">
+              A conversational audio version · takes a couple of minutes
+            </span>
+          </span>
+        </button>
       ) : null}
 
       <div className="mt-5 flex flex-col">
@@ -335,6 +380,25 @@ function EmptyState({
       </button>
       <p className="mt-3 text-[12px] text-[var(--faint)]">Takes about 3–4 minutes.</p>
     </Centered>
+  );
+}
+
+function MicIcon() {
+  return (
+    <svg
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="9" y="2" width="6" height="11" rx="3" />
+      <path d="M5 10v1a7 7 0 0 0 14 0v-1M12 18v3" />
+    </svg>
   );
 }
 

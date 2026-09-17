@@ -3,7 +3,6 @@ import { supabase } from "../lib/supabase";
 import { withDiagnostics } from "../lib/diagnostics";
 import { synthesize } from "../lib/synthesis";
 import { writeRecap } from "../lib/recap";
-import { generatePodcast } from "./generate-podcast";
 import type { Preferences, ReportContent, ReportRecap } from "@shared/types";
 import type { FetchedTopic } from "./fetch-news";
 
@@ -110,11 +109,8 @@ export const generateReport = task({
         sections: content.sections.length,
       });
 
-      // Hand off to podcast generation if the user wants audio. Pass force so a regenerate also
-      // rebuilds the audio (otherwise the finished episode would be kept and go stale).
-      if (prefs.podcast_enabled) {
-        await generatePodcast.trigger({ reportId, force });
-      }
+      // Podcast generation is deliberately NOT automatic (it's the most expensive step): the user
+      // asks for it per report from the app (POST /api/podcast -> generate-podcast task).
 
       return { reportId, skipped: false };
     } catch (error: any) {
