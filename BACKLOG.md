@@ -103,18 +103,35 @@ break. This is not general test coverage.
 * [ ] Playwright suite covering the demo path end to end: demo sign in, brief
       renders, history navigation, preferences editing, audio player docks and
       expands.
-* [ ] Assert that the `is_demo` gate holds. Generation and podcast actions must
-      trigger no paid API call.
+* [ ] Assert the `is_demo` gate holds, at the level that actually protects the
+      budget: signed in as the demo user, POST /api/generate and POST
+      /api/podcast must return a refusal. A browser cannot observe "no paid call
+      happened", and asserting only that the UI hides a button proves nothing,
+      because the credentials are public and the endpoints can be hit directly.
 * [ ] Exploratory pass with Claude Code driving the browser, hunting broken
-      states rather than following a script. Target the states never reproduced
-      manually: empty history, user with zero topics, brief mid generation,
-      failed podcast, very long custom interest strings.
-* [ ] Wire the suite into CI.
+      states rather than following a script. Reachable by driving the UI: empty
+      history, user with zero topics, very long custom interest strings.
+* [ ] Seed the states that cannot be reached by clicking as database rows, then
+      assert the UI renders them: a report stuck in `generating`, a podcast
+      episode marked `failed`. Demo mode blocks generation by design, so these
+      cannot be produced through the app, and producing them for real would
+      defeat Phase 0.
+* [ ] Wire the suite into CI, running against the deployed Vercel URL rather
+      than a local dev server. Nothing to reproduce in CI, and it exercises the
+      same thing a recruiter hits. Demo credentials in CI secrets are fine,
+      being public by design.
 
 Two reasons this sits before Phase 3 rather than in the deferred list. The demo
 account will be seen in states never looked at personally, and a repo with tests
 and a passing CI badge is one of the few things a technically inclined reviewer
 will actually check.
+
+Keep the assertions coarse: does it render, does it navigate, does the player
+dock. A red badge on a public repo is worse than no badge, so nothing timing or
+pixel sensitive, and nothing outside the demo path.
+
+Expect this phase to feed Phase 3 rather than cleanly precede it. An exploratory
+pass hunting broken states is how the Phase 3 list grows.
 
 Explicitly **not** doing: an autonomous agent that recurrently tests the app and
 proposes new features. It has no access to how real users behave, so it would
