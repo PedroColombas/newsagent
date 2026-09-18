@@ -95,6 +95,40 @@ button, and concludes the app is broken. Handle with banner copy, not logic.
 
 ---
 
+## Phase 2.5 — Test the demo path
+
+Scoped deliberately: the paths a recruiter will walk are the ones that must not
+break. This is not general test coverage.
+
+* [ ] Playwright suite covering the demo path end to end: demo sign in, brief
+      renders, history navigation, preferences editing, audio player docks and
+      expands.
+* [ ] Assert that the `is_demo` gate holds. Generation and podcast actions must
+      trigger no paid API call.
+* [ ] Exploratory pass with Claude Code driving the browser, hunting broken
+      states rather than following a script. Target the states never reproduced
+      manually: empty history, user with zero topics, brief mid generation,
+      failed podcast, very long custom interest strings.
+* [ ] Wire the suite into CI.
+
+Two reasons this sits before Phase 3 rather than in the deferred list. The demo
+account will be seen in states never looked at personally, and a repo with tests
+and a passing CI badge is one of the few things a technically inclined reviewer
+will actually check.
+
+Explicitly **not** doing: an autonomous agent that recurrently tests the app and
+proposes new features. It has no access to how real users behave, so it would
+reproduce existing assumptions rather than break them, which is the only thing
+that makes user testing worth doing. It would also trigger paid API calls, which
+Phase 0 exists to stop. If agent driven testing is interesting in itself, build
+it later as a separate project where the agent is the point.
+
+For real user insight at two or three testers: add basic event logging (topics
+chosen, podcast opened, where sessions end, return after first brief) and ask
+them directly what confused them. Both beat simulation at this scale.
+
+---
+
 ## Phase 3 — UX fixes visible in the demo
 
 Only fixes a demo visitor will actually see. Everything else waits.
@@ -171,6 +205,8 @@ Not abandoned. Just not before the CV goes out.
   nothing a recruiter can see. Worth learning separately, on a different
   project, after applying.
 * ElevenLabs voice upgrade
+* Autonomous testing agent that proposes features (see Phase 2.5 for reasoning)
+* General test coverage beyond the demo path
 * SwiftUI and Liquid Glass native rewrite. Not a refactor. SwiftUI is Apple's
   native framework, so this means rewriting the entire frontend in Swift, on a
   platform the pipeline never touches, and it needs a Mac and Xcode. It fails
@@ -214,6 +250,7 @@ One sentence per feature, written to be readable out loud in an interview.
 
 * Phases 0 and 1: one evening
 * Phase 2: two to three sessions, the substantial piece
+* Phase 2.5: one session
 * Phases 3 to 5: a few evenings
 * Applications out inside two weeks
 
