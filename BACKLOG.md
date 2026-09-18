@@ -96,6 +96,11 @@ Only fixes a demo visitor will actually see. Everything else waits.
 * [ ] Fix the catch up icon on new topics. Relabel to "New topic". Add a bubble.
 * [ ] Add a bubble for the "what you missed" feature, first occurrence only.
       Skip if it does not surface in the demo flow.
+* [ ] Glass treatment on floating surfaces only: mini player, bottom nav, coach
+      mark bubbles, edit sheet. Tailwind already ships backdrop blur, so no new
+      dependency. Deliberately not a wholesale restyle, which would fight the
+      warm paper palette. Worth doing because it lands in the screenshots and
+      the recording, which is what a recruiter actually sees.
 
 ---
 
@@ -159,6 +164,15 @@ Not abandoned. Just not before the CV goes out.
   nothing a recruiter can see. Worth learning separately, on a different
   project, after applying.
 * ElevenLabs voice upgrade
+* SwiftUI and Liquid Glass native rewrite. Not a refactor. SwiftUI is Apple's
+  native framework, so this means rewriting the entire frontend in Swift, on a
+  platform the pipeline never touches, and it needs a Mac and Xcode. It fails
+  the access constraint outright: a native app cannot be opened from a CV link,
+  and TestFlight or the App Store both put an account between the recruiter and
+  the demo. It costs weeks rather than days, and it strengthens a mobile claim
+  rather than the AI systems claim this artifact exists to make. Revisit only if
+  the target roles become iOS ones, which would change the whole plan. The glass
+  aesthetic itself is available on the web today and is handled in Phase 3.
 
 ---
 
