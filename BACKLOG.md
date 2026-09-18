@@ -43,13 +43,20 @@ is the bulk of the spend. Turning it off solves most of the problem on its own.
 Do this before seeding demo content. Seeding forces a walk through the whole
 app, and that is much easier once every feature is understood.
 
-* [ ] Read the code for the **primer** feature. Write one plain sentence
+* [x] Read the code for the **primer** feature. Write one plain sentence
       describing what it does. Add it to this file under "Feature glossary".
-* [ ] Do the same for any other feature that could not be explained under
+* [x] Do the same for any other feature that could not be explained under
       questioning. Candidates: "what you missed" recap, chapter generation,
       local time delivery handling.
-* [ ] Scan the **full git history** for secrets, not just the working tree.
+* [x] Scan the **full git history** for secrets, not just the working tree.
       Keys removed in a later commit are still present in history.
+
+Scan result (2026-09-18): clean across all 85 commits. No provider key prefixes
+anywhere in history (OpenAI, Anthropic, Perplexity, Trigger, Stripe, AWS,
+GitHub) and no Supabase JWTs. The only env files ever committed are the two
+`.env.example` templates, both with empty values. `.gitignore` covers `.env` and
+`.env.*` with an exception for the examples. No history rewrite is needed before
+publishing in Phase 5.
 
 Rationale: an interviewer asking "what does this do" and getting a vague answer
 costs more than a missing feature ever would.
@@ -178,12 +185,28 @@ Not abandoned. Just not before the CV goes out.
 
 ## Feature glossary
 
-Fill during Phase 1. One sentence per feature, written to be readable out loud
-in an interview.
+One sentence per feature, written to be readable out loud in an interview.
 
-* **Primer** — (to fill)
-* **What you missed recap** — (to fill)
-* **Chapters** — (to fill)
+* **Primer** — The first time you follow a topic it gets a catch-up rather than
+  a news update: a wider month-long search window, a query asking for background
+  and the current state of the field instead of the last day's headlines, and a
+  synthesis prompt that orients a newcomer, fired once per topic per user and
+  tracked in `user_topic_history`.
+* **What you missed recap** — If briefs were generated while you were away and
+  you never opened them, today's brief opens with a short catch-up condensed
+  from exactly those briefs, keyed off what you have actually read
+  (`report_reads`) rather than off elapsed time, and built from the stored
+  reports so it costs no new research.
+* **Chapters** — Every line of the podcast script is tagged with the report
+  section it covers, which gives the player its jump points, stored as fractions
+  of the script's total word count rather than timestamps because the real audio
+  length is not known until it is rendered, so the player scales them to the
+  actual duration on playback.
+* **Local time delivery** — The delivery hour is stored as a whole hour in UTC
+  so the hourly cron can match it directly, and the UI converts to and from the
+  user's local hours on read and write, which keeps the round trip exact, with
+  the accepted tradeoff that a fixed UTC hour drifts by an hour across a DST
+  change.
 
 ---
 
