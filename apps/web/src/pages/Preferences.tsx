@@ -10,6 +10,7 @@ import { TopicManager } from "../components/preferences/TopicManager";
 import { Toggle } from "../components/ui/Toggle";
 import { Coachmarks } from "../components/Coachmarks";
 import { MAX_TOPICS } from "../lib/preferences-options";
+import { useSetup } from "../lib/setup";
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
@@ -21,6 +22,7 @@ function SectionLabel({ children }: { children: ReactNode }) {
 
 export function Preferences() {
   const { prefs, loading, status, update, markTipsSeen } = usePreferences();
+  const setup = useSetup();
   const { report } = useLatestReport();
   const [topicsChanged, setTopicsChanged] = useState(false);
   const [regen, setRegen] = useState<"idle" | "submitting" | "done">("idle");
@@ -129,6 +131,20 @@ export function Preferences() {
         </div>
         <Toggle checked={prefs.podcast_enabled} onChange={(podcast_enabled) => update({ podcast_enabled })} />
       </div>
+
+      {/* Replay of the setup wizard — otherwise the screen that does the most to explain the
+          product is only ever seen once, on a first run. */}
+      {setup && (
+        <button
+          onClick={setup.openSetup}
+          className="rounded-2xl border border-dashed border-[var(--line)] px-4 py-3.5 text-left active:opacity-70"
+        >
+          <span className="block text-[14.5px] font-semibold">See how this was set up</span>
+          <span className="mt-0.5 block text-[12px] text-[var(--muted)]">
+            Walk through the setup wizard again
+          </span>
+        </button>
+      )}
 
       {/* Coach marks teach a returning user over time. A demo visitor arrives already briefed by
           the landing page and has about ninety seconds, so bubbles only get in their way. */}

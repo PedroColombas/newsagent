@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useAuth } from "../auth/AuthProvider";
@@ -25,10 +25,15 @@ import { Coachmarks } from "../components/Coachmarks";
 // the first all-primer run is the slowest; real failures surface faster via a failed report.
 const GEN_TIMEOUT_MS = 8 * 60 * 1000;
 
+// A demo visitor never watches a brief being written, because the demo's briefs already exist. Play
+// the real compiling screen briefly on arrival so that part of the product isn't invisible to them.
+const DEMO_INTRO_KEY = "demo-intro-played";
+const DEMO_INTRO_MS = 2600;
+
 export function Today() {
   const { user } = useAuth();
   const { report, episode, loading, refetch } = useLatestReport();
-  const { prefs, markTipsSeen } = usePreferences();
+  const { prefs, loading: prefsLoading, markTipsSeen } = usePreferences();
   const { play } = usePlayer();
   const navigate = useNavigate();
 
@@ -47,6 +52,22 @@ export function Today() {
   // The reason the LAST attempt failed, straight from the server. Preferred over the message stored
   // on an older failed record, which otherwise gets shown for an unrelated new failure.
   const [genErrorMessage, setGenErrorMessage] = useState<string | null>(null);
+
+  const [introDone, setIntroDone] = useState(false);
+  // Decided ONCE, in the first render where preferences are known. Deciding inside an effect would
+  // land a frame too late and flash the brief before replacing it with the loading screen.
+  const playIntro = useRef<boolean | null>(null);
+  if (playIntro.current === null && !prefsLoading) {
+    let alreadyPlayed = true;
+    try {
+      alreadyPlayed = sessionStorage.getItem(DEMO_INTRO_KEY) !== null;
+      if (!alreadyPlayed) sessionStorage.setItem(DEMO_INTRO_KEY, "1");
+    } catch {
+      alreadyPlayed = true; // storage unavailable — skip the flourish rather than risk a stuck screen
+    }
+    playIntro.current = !!prefs?.is_demo && !alreadyPlayed;
+  }
+  const showDemoIntro = playIntro.current === true && !introDone;
 
   const waiting =
     generating || report?.status === "pending" || report?.status === "generating";
@@ -110,6 +131,12 @@ export function Today() {
     if (episode) setPodcastStarting(false);
   }, [episode]);
 
+  useEffect(() => {
+    if (!showDemoIntro) return;
+    const t = setTimeout(() => setIntroDone(true), DEMO_INTRO_MS);
+    return () => clearTimeout(t);
+  }, [showDemoIntro]);
+
   // Safety net: if a generation never lands, stop waiting and surface an error.
   useEffect(() => {
     if (!waiting || effectiveStart == null) return;
@@ -166,9 +193,13 @@ export function Today() {
     }
   }
 
-  if (loading) {
+  // Waits for preferences too: the demo intro needs to know whether this is the demo, and deciding
+  // after the brief has rendered would show content and then snatch it away.
+  if (loading || prefsLoading) {
     return <Centered>Loading your brief…</Centered>;
   }
+
+  if (showDemoIntro) return <CompilingBrief />;
 
   // A trigger error, this run's own failure, or a stalled generation → error with retry (no hang).
   if (genError || (timedOut && waiting) || failedIsCurrent) {

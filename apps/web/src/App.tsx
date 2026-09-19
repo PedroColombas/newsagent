@@ -6,6 +6,7 @@ import { usePreferences } from "./hooks/usePreferences";
 import { AppShell } from "./components/AppShell";
 import { FullPlayer } from "./components/FullPlayer";
 import { Onboarding } from "./pages/Onboarding";
+import { SetupContext } from "./lib/setup";
 import { Login } from "./pages/Login";
 
 // Lazy — the reading view pulls in react-markdown, which we don't want in the initial bundle.
@@ -31,15 +32,30 @@ function AuthedApp() {
   // wizard doesn't immediately flip us out of it. Exit only when the wizard says so.
   const startedEmpty = useRef<boolean | null>(null);
   const [finishedOnboarding, setFinishedOnboarding] = useState(false);
+  // Replaying the wizard on request, rather than because this is a first run.
+  const [replayingSetup, setReplayingSetup] = useState(false);
 
   if (loading || !prefs) return <Splash />;
   if (startedEmpty.current === null) startedEmpty.current = prefs.genres.length === 0;
 
-  if (startedEmpty.current && !finishedOnboarding) {
-    return <Onboarding prefs={prefs} update={update} onDone={() => setFinishedOnboarding(true)} />;
+  if ((startedEmpty.current && !finishedOnboarding) || replayingSetup) {
+    return (
+      <Onboarding
+        prefs={prefs}
+        update={update}
+        onDone={() => {
+          setFinishedOnboarding(true);
+          setReplayingSetup(false);
+        }}
+      />
+    );
   }
 
-  return <AuthedRoutes />;
+  return (
+    <SetupContext.Provider value={{ openSetup: () => setReplayingSetup(true) }}>
+      <AuthedRoutes />
+    </SetupContext.Provider>
+  );
 }
 
 const HOME_LOCATION = { pathname: "/", search: "", hash: "", state: null, key: "default" } as Location;
