@@ -126,11 +126,15 @@ export const seedDemoBriefs = task({
 
     for (const [i, brief] of BRIEFS.entries()) {
       const date = dates[i];
+      // UPSERT, not update: an update silently matches zero rows if the demo account has no
+      // preferences row, and fetch-news then dies on its .single() with an opaque message. This
+      // also validates the uuid for free — a wrong one fails the foreign key immediately.
       const { error: prefsErr } = await db
         .from("preferences")
-        .update({ ...COMMON_PREFS, ...brief.prefs })
-        .eq("user_id", userId);
-      if (prefsErr) throw prefsErr;
+        .upsert({ user_id: userId, ...COMMON_PREFS, ...brief.prefs }, { onConflict: "user_id" })
+        .select("user_id")
+        .single();
+      if (prefsErr) throw new Error(`could not write demo preferences: ${prefsErr.message}`);
 
       logger.info("seeding brief", { date, label: brief.label });
       await fetchNews.trigger({ userId, date, force: true });
@@ -204,7 +208,12 @@ async function waitForReport(userId: string, date: string): Promise<string> {
 
     if (data?.status === "complete") return data.id as string;
     if (data?.status === "failed") {
-      throw new Error(`brief ${date} failed: ${data.error_message ?? "unknown error"}`);
+      // reports.error_message is the sanitised, user-facing string. The real cause is on the
+      // fetch-news run in the Trigger dashboard.
+      throw new Error(
+        `brief ${date} failed: ${data.error_message ?? "unknown error"} ` +
+          "— open the fetch-news run in the Trigger dashboard for the underlying error.",
+      );
     }
     await wait.for({ seconds: 10 });
   }
