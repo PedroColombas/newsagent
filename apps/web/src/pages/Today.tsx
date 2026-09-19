@@ -32,7 +32,10 @@ const DEMO_INTRO_MS = 2600;
 
 export function Today() {
   const { user } = useAuth();
-  const { report, episode, loading, refetch } = useLatestReport();
+  const { report, lastComplete, episode, loading, refetch } = useLatestReport();
+  // The brief actually shown. Usually the newest report; when that one failed or is still
+  // being written, the most recent readable one instead.
+  const brief = lastComplete;
   const { prefs, loading: prefsLoading, markTipsSeen } = usePreferences();
   const { play } = usePlayer();
   const navigate = useNavigate();
@@ -52,6 +55,7 @@ export function Today() {
   // The reason the LAST attempt failed, straight from the server. Preferred over the message stored
   // on an older failed record, which otherwise gets shown for an unrelated new failure.
   const [genErrorMessage, setGenErrorMessage] = useState<string | null>(null);
+  const [errorDismissed, setErrorDismissed] = useState(false);
 
   const [introDone, setIntroDone] = useState(false);
   // Decided ONCE, in the first render where preferences are known. Deciding inside an effect would
@@ -93,15 +97,18 @@ export function Today() {
   // loading card (and its poll) would spin forever on every brief.
   const podcastPending =
     !!prefs?.podcast_enabled &&
-    report?.status === "complete" &&
+    !!brief &&
     !!episode &&
     (episode.status === "pending" || episode.status === "generating");
 
   // Offer to make one once the brief is done and there's no episode yet (or the last try failed).
   const canMakePodcast =
-    !!prefs?.podcast_enabled &&
-    report?.status === "complete" &&
-    (!episode || episode.status === "failed");
+    !!prefs?.podcast_enabled && !!brief && (!episode || episode.status === "failed");
+
+  // A failure is worth reporting, but it should never cost access to briefs already in hand.
+  const failureMessage =
+    genErrorMessage ?? (report?.status === "failed" ? report.error_message : undefined);
+  const showFailure = (genError || (timedOut && waiting) || failedIsCurrent) && !errorDismissed;
 
   // Drop the optimistic flag once the brief actually completes.
   useEffect(() => {
@@ -166,6 +173,8 @@ export function Today() {
   async function generateNow() {
     const baselineCreatedAt = report?.created_at ?? null;
     setGenError(false);
+    setGenErrorMessage(null);
+    setErrorDismissed(false);
     setTimedOut(false);
     setStartedAt(Date.now());
     setBaseline(baselineCreatedAt);
@@ -184,10 +193,10 @@ export function Today() {
   // Explicit, user-initiated podcast generation — never automatic, since audio is the most
   // expensive step in the pipeline.
   async function makePodcast() {
-    if (!report) return;
+    if (!brief) return;
     setPodcastStarting(true);
     try {
-      await requestPodcast(report.id);
+      await requestPodcast(brief.id);
     } catch {
       setPodcastStarting(false);
     }
@@ -201,34 +210,33 @@ export function Today() {
 
   if (showDemoIntro) return <CompilingBrief />;
 
-  // A trigger error, this run's own failure, or a stalled generation → error with retry (no hang).
-  if (genError || (timedOut && waiting) || failedIsCurrent) {
-    const message =
-      genErrorMessage ?? (report?.status === "failed" ? report.error_message : undefined);
-    return <GenerateError onRetry={generateNow} message={message} />;
+  // A failure with no earlier brief to fall back on still takes the screen - there is genuinely
+  // nothing else to show. Otherwise it appears as a dismissible notice above the last good brief.
+  if (showFailure && !brief) {
+    return <GenerateError onRetry={generateNow} message={failureMessage} />;
   }
 
-  if (waiting) {
+  if (waiting && !showFailure) {
     return <CompilingBrief />;
   }
 
-  if (!report) {
+  if (!brief) {
     return <EmptyState deliveryHour={prefs?.delivery_hour} onGenerate={generateNow} />;
   }
 
-  if (report.status !== "complete" || !report.content) {
+  if (!brief.content) {
     return <CompilingBrief />;
   }
 
-  const sections = report.content.sections;
+  const sections = brief.content.sections;
   const name = displayName(user);
   const minutes = estimateReadMinutes(sections.map((s) => s.summary));
   const playable: PlayerEpisode | null =
     episode?.status === "complete" && episode.audio_url
       ? {
           episodeId: episode.id,
-          reportId: report.id,
-          date: report.date,
+          reportId: brief.id,
+          date: brief.date,
           audioPath: episode.audio_url,
           durationSeconds: episode.duration_seconds,
           chapters: episode.chapters ?? [],
@@ -237,8 +245,33 @@ export function Today() {
 
   return (
     <section className="px-6 pb-12 pt-6">
+      {showFailure && (
+        <div className="mb-5 flex flex-col gap-2.5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3.5">
+          <div>
+            <p className="text-[13.5px] font-semibold">That brief didn&rsquo;t come through</p>
+            <p className="mt-0.5 text-[12.5px] leading-relaxed text-[var(--muted)]">
+              {failureMessage || "Something went wrong while generating it."}
+            </p>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => void generateNow()}
+              className="rounded-full bg-[var(--accent)] px-4 py-2 text-[13px] font-semibold text-[var(--on-accent)]"
+            >
+              Try again
+            </button>
+            <button
+              onClick={() => setErrorDismissed(true)}
+              className="px-3 py-2 text-[13px] font-semibold text-[var(--muted)]"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       <span className="text-[12px] font-semibold uppercase tracking-[1.8px] text-[var(--muted)]">
-        {formatReportDate(report.date)}
+        {formatReportDate(brief.date)}
       </span>
       <h1 className="mt-2 text-[28px] font-bold leading-tight tracking-tight">
         {greeting()}
@@ -248,9 +281,9 @@ export function Today() {
         Your brief · {sections.length} {sections.length === 1 ? "topic" : "topics"} · {minutes} min read
       </span>
 
-      {report.content.recap && (
+      {brief.content.recap && (
         <div className="mt-5" data-tour="recap">
-          <RecapCard recap={report.content.recap} />
+          <RecapCard recap={brief.content.recap} />
         </div>
       )}
 
@@ -323,7 +356,7 @@ export function Today() {
         {sections.map((s, i) => (
           <button
             key={i}
-            onClick={() => navigate(`/report/${report.date}#s${i}`)}
+            onClick={() => navigate(`/report/${brief.date}#s${i}`)}
             data-tour={i === 0 ? "topic" : undefined}
             className="flex flex-col gap-2 border-t border-[var(--line)] py-5 text-left transition-opacity active:opacity-60"
           >
@@ -367,7 +400,7 @@ export function Today() {
             {
               key: "today-recap",
               target: '[data-tour="recap"]',
-              enabled: !!report.content.recap,
+              enabled: !!brief.content.recap,
               title: "While you were away",
               body: "When you've been away, your brief opens with a quick catch-up on what you missed.",
             },
