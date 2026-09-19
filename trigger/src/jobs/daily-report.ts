@@ -46,7 +46,8 @@ export const dailyReport = schedules.task({
     const { data, error } = await supabase()
       .from("preferences")
       .select("user_id")
-      .eq("delivery_hour", hour);
+      .eq("delivery_hour", hour)
+      .eq("is_demo", false); // the public demo account is never included in automatic generation
     if (error) throw error;
 
     const users = data ?? [];

@@ -41,6 +41,7 @@ const prefs: Preferences = {
   delivery_hour: 6,
   walkthrough_seen: true,
   tips_seen: [],
+  is_demo: false,
   topic_order: [],
   updated_at: "2026-06-21T00:00:00Z",
 };

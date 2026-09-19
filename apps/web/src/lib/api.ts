@@ -39,9 +39,16 @@ export async function fetchSubtopicSuggestions(genre: string): Promise<string[]>
   if (cached) return cached;
 
   try {
+    // The endpoint spends money, so it now requires a session and refuses the demo account. A
+    // refusal is harmless here — the catch below serves the built-in list instead.
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
     const res = await fetch("/api/suggest-subtopics", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify({ genre }),
     });
     if (!res.ok) throw new Error(`status ${res.status}`);

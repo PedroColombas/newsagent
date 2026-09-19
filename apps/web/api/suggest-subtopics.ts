@@ -1,8 +1,14 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { suggestSubtopics } from "./_lib/suggest";
+import { authorisePaidRequest } from "./_lib/paid-request";
 
 // POST /api/suggest-subtopics  { genre: string }  ->  { subtopics: string[] }
-// Runs server-side so ANTHROPIC_API_KEY (set in Vercel env vars) never reaches the client.
+// Runs server-side so ANTHROPIC_API_KEY never reaches the client.
+//
+// This SPENDS MONEY (Anthropic + Perplexity) and used to be open to the internet - anyone who found
+// the URL could drain both accounts in a loop. It now requires a session and refuses the demo
+// account. A refusal costs the caller nothing: the client falls back to the built-in subtopic list,
+// so the chips still appear and nothing looks broken.
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -18,6 +24,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!genre.trim()) {
     return res.status(400).json({ error: "Missing genre" });
   }
+
+  const auth = await authorisePaidRequest(req.headers.authorization);
+  if (!auth.userId) return res.status(auth.status ?? 401).json({ error: auth.error });
 
   try {
     const subtopics = await suggestSubtopics(genre, apiKey, process.env.PERPLEXITY_API_KEY);
