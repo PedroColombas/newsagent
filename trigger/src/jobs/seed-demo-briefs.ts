@@ -7,7 +7,7 @@ import { generatePodcast } from "./generate-podcast";
 // ONE-OFF SEEDER for the public demo account (BACKLOG Phase 2). Runs the REAL pipeline, so it
 // costs real money (~$1–1.50 all in) — deliberately, once, to produce authentic content that is
 // then frozen. Never scheduled; run it by hand from the Trigger dashboard:
-//   { "userId": "<demo uuid>", "reset": true }
+//   { "userId": "<demo uuid>", "reset": true }     ← or { "email": "demo@...", "reset": true }
 //
 // It arranges the data so the demo shows off three things that otherwise would not appear:
 //   • Normal daily news — by pre-marking topics as already briefed (PRIMED_KEYS), so they do not
@@ -97,10 +97,9 @@ export const seedDemoBriefs = task({
   id: "seed-demo-briefs",
   // Four full pipeline runs back to back. Waits over 5s are checkpointed, so this is mostly idle.
   maxDuration: 3600,
-  run: async (payload: { userId: string; reset?: boolean; dates?: string[] }) => {
-    if (!payload.userId) throw new Error("Provide { userId } — the demo account's uuid.");
+  run: async (payload: { userId?: string; email?: string; reset?: boolean; dates?: string[] }) => {
     const db = supabase();
-    const userId = payload.userId;
+    const userId = await resolveUserId(payload);
     const dates = payload.dates ?? lastWeekdays(BRIEFS.length);
     if (dates.length !== BRIEFS.length) {
       throw new Error(`Need ${BRIEFS.length} dates, got ${dates.length}.`);
@@ -160,6 +159,23 @@ export const seedDemoBriefs = task({
     return { userId, briefs: made };
   },
 });
+
+// Accepts either the uuid or the account's email. The error echoes what actually arrived, because
+// an empty payload here looks identical to a missing field.
+async function resolveUserId(payload: { userId?: string; email?: string }): Promise<string> {
+  if (payload.userId) return payload.userId;
+  if (payload.email) {
+    const { data, error } = await supabase().auth.admin.listUsers();
+    if (error) throw error;
+    const match = data.users.find((u) => u.email?.toLowerCase() === payload.email!.toLowerCase());
+    if (!match) throw new Error(`No user found with email ${payload.email}`);
+    return match.id;
+  }
+  throw new Error(
+    "Provide { userId } (the demo account's uuid) or { email }. " +
+      `Received payload: ${JSON.stringify(payload ?? null)}`,
+  );
+}
 
 // The most recent `count` weekdays, oldest first, including today when today is a weekday — so the
 // newest brief carries today's date and matches the news actually inside it.
