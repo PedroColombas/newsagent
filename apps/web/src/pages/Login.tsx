@@ -1,9 +1,9 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth, demoAvailable } from "../auth/AuthProvider";
 
 export function Login() {
-  const { signInWithEmail, signInWithGoogle } = useAuth();
+  const { signInWithEmail, signInWithGoogle, signInAsDemo } = useAuth();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +25,17 @@ export function Login() {
     setError(null);
     const { error: googleError } = await signInWithGoogle();
     if (googleError) setError(googleError);
+  }
+
+  async function onDemo() {
+    setError(null);
+    setStatus("sending");
+    const { error: demoError } = await signInAsDemo();
+    if (demoError) {
+      setError(demoError);
+      setStatus("error");
+    }
+    // On success the auth listener swaps this screen out, so there is nothing to reset.
   }
 
   return (
@@ -99,6 +110,23 @@ export function Login() {
           </form>
 
           {error && <p className="text-center text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+          {demoAvailable && (
+            <>
+              <div className="flex items-center gap-3 py-1">
+                <span className="h-px flex-1 bg-[var(--line)]" />
+                <span className="text-xs font-medium text-[var(--faint)]">just looking?</span>
+                <span className="h-px flex-1 bg-[var(--line)]" />
+              </div>
+              <button
+                onClick={() => void onDemo()}
+                disabled={status === "sending"}
+                className="rounded-2xl border border-dashed border-[var(--accent)]/50 py-3.5 text-[15px] font-semibold text-[var(--accent)] disabled:opacity-50"
+              >
+                View the demo — no signup
+              </button>
+            </>
+          )}
 
           <p className="mx-4 mt-2 text-center text-[11px] leading-relaxed text-[var(--faint)]">
             By continuing you agree to our <span className="font-semibold text-[var(--ink)]">Terms</span> and{" "}
