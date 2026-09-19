@@ -1,9 +1,18 @@
+import { useState } from "react";
 import type { ReportRecap } from "@shared/types";
 
-// "While you were away" card — shown at the top of the brief when the user missed days.
+// "While you were away" card — shown above the brief when the reader missed days. Collapsed to a
+// few lines by default: fully open it dominates the screen and pulls attention off the brief
+// itself, which is the thing they actually came for. Tap to read the rest.
 export function RecapCard({ recap }: { recap: ReportRecap }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <div className="rounded-2xl border border-[var(--line)] border-l-[3px] border-l-[var(--accent)] bg-[var(--surface)] p-4">
+    <button
+      onClick={() => setOpen((v) => !v)}
+      aria-expanded={open}
+      className="w-full rounded-2xl border border-[var(--line)] border-l-[3px] border-l-[var(--accent)] bg-[var(--surface)] p-4 text-left"
+    >
       <div className="flex items-center gap-2">
         <span className="text-[11px] font-bold uppercase tracking-[1.2px] text-[var(--accent)]">
           While you were away
@@ -12,9 +21,18 @@ export function RecapCard({ recap }: { recap: ReportRecap }) {
           · {recap.days} {recap.days === 1 ? "day" : "days"}
         </span>
       </div>
-      <p className="mt-2 whitespace-pre-line text-[14px] leading-relaxed text-[var(--ink)]/85">
+
+      <p
+        className={`mt-2 whitespace-pre-line text-[14px] leading-relaxed text-[var(--ink)]/85 ${
+          open ? "" : "line-clamp-3"
+        }`}
+      >
         {recap.summary}
       </p>
-    </div>
+
+      <span className="mt-2 inline-block text-[12.5px] font-semibold text-[var(--accent)]">
+        {open ? "Show less" : "Read more"}
+      </span>
+    </button>
   );
 }
