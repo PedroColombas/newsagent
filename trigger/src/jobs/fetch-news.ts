@@ -205,6 +205,13 @@ function friendlyFetchError(err: unknown): string {
   if (/insufficient_quota|exceeded your current quota|\b429\b|rate.?limit|too many requests|quota/i.test(msg)) {
     return "The news service is temporarily unavailable (usage limit reached). Please try again shortly.";
   }
+  // Provider BILLING exhaustion is a different animal from a transient rate limit: retrying never
+  // clears it. Called out separately because it otherwise lands in the generic bucket below, which
+  // leaves a failed brief giving no hint that the fix is "top up the account". (Cost us a debugging
+  // round trip when the Anthropic balance ran out mid-seed.)
+  if (/credit balance is too low|payment required|insufficient funds|out of credit|billing/i.test(msg)) {
+    return "Couldn't generate — the AI provider account is out of credit.";
+  }
   return "Couldn't gather today's news — something went wrong. Please try again.";
 }
 
