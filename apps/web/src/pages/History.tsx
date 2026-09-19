@@ -156,7 +156,7 @@ export function History() {
         </div>
       </div>
 
-      {prefs && (
+      {prefs && !prefs.is_demo && (
         <Coachmarks
           seen={prefs.tips_seen ?? []}
           onSeen={markTipsSeen}

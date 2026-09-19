@@ -130,37 +130,41 @@ export function Preferences() {
         <Toggle checked={prefs.podcast_enabled} onChange={(podcast_enabled) => update({ podcast_enabled })} />
       </div>
 
-      <Coachmarks
-        seen={prefs.tips_seen ?? []}
-        onSeen={markTipsSeen}
-        tips={[
-          {
-            key: "prefs-topics",
-            target: '[data-tour="prefs-topics"]',
-            placement: "below", // sit under the topic cards, pointing up, so it never covers them
-            title: "Your topics",
-            body: `These are the sections of your brief. Drag to reorder, tap to edit, or add up to ${MAX_TOPICS}.`,
-          },
-          {
-            key: "prefs-style",
-            target: '[data-tour="prefs-style"]',
-            title: "How it reads",
-            body: "Set the length — briefing, standard, or deep dive — and the tone it's written in.",
-          },
-          {
-            key: "prefs-delivery",
-            target: '[data-tour="prefs-delivery"]',
-            title: "Delivery time",
-            body: "Choose when your brief lands each morning, in your local time.",
-          },
-          {
-            key: "prefs-podcast",
-            target: '[data-tour="prefs-podcast"]',
-            title: "Daily podcast",
-            body: "Turn on an audio version and it'll appear on Today, ready to play.",
-          },
-        ]}
-      />
+      {/* Coach marks teach a returning user over time. A demo visitor arrives already briefed by
+          the landing page and has about ninety seconds, so bubbles only get in their way. */}
+      {!prefs.is_demo && (
+        <Coachmarks
+          seen={prefs.tips_seen ?? []}
+          onSeen={markTipsSeen}
+          tips={[
+            {
+              key: "prefs-topics",
+              target: '[data-tour="prefs-topics"]',
+              placement: "below", // sit under the topic cards, pointing up, so it never covers them
+              title: "Your topics",
+              body: `These are the sections of your brief. Drag to reorder, tap to edit, or add up to ${MAX_TOPICS}.`,
+            },
+            {
+              key: "prefs-style",
+              target: '[data-tour="prefs-style"]',
+              title: "How it reads",
+              body: "Set the length — briefing, standard, or deep dive — and the tone it's written in.",
+            },
+            {
+              key: "prefs-delivery",
+              target: '[data-tour="prefs-delivery"]',
+              title: "Delivery time",
+              body: "Choose when your brief lands each morning, in your local time.",
+            },
+            {
+              key: "prefs-podcast",
+              target: '[data-tour="prefs-podcast"]',
+              title: "Daily podcast",
+              body: "Turn on an audio version and it'll appear on Today, ready to play.",
+            },
+          ]}
+        />
+      )}
     </section>
   );
 }

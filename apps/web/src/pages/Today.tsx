@@ -44,6 +44,9 @@ export function Today() {
   const [baseline, setBaseline] = useState<string | null>(bridge?.baseline ?? null);
   // Optimistic flag covering the gap between asking for a podcast and its episode row appearing.
   const [podcastStarting, setPodcastStarting] = useState(false);
+  // The reason the LAST attempt failed, straight from the server. Preferred over the message stored
+  // on an older failed record, which otherwise gets shown for an unrelated new failure.
+  const [genErrorMessage, setGenErrorMessage] = useState<string | null>(null);
 
   const waiting =
     generating || report?.status === "pending" || report?.status === "generating";
@@ -143,9 +146,10 @@ export function Today() {
     markPending(baselineCreatedAt);
     try {
       await requestTodayBrief();
-    } catch {
+    } catch (err) {
       setGenerating(false);
       setGenError(true);
+      setGenErrorMessage(err instanceof Error ? err.message : null);
       clearPending();
     }
   }
@@ -168,7 +172,8 @@ export function Today() {
 
   // A trigger error, this run's own failure, or a stalled generation → error with retry (no hang).
   if (genError || (timedOut && waiting) || failedIsCurrent) {
-    const message = report?.status === "failed" ? report.error_message : undefined;
+    const message =
+      genErrorMessage ?? (report?.status === "failed" ? report.error_message : undefined);
     return <GenerateError onRetry={generateNow} message={message} />;
   }
 
@@ -317,7 +322,7 @@ export function Today() {
 
       {/* Contextual coach marks — fire once the first brief is on screen (real elements to point at).
           Recap + podcast tips are conditional: they only appear when those cards are actually here. */}
-      {prefs && (
+      {prefs && !prefs.is_demo && (
         <Coachmarks
           seen={prefs.tips_seen ?? []}
           onSeen={markTipsSeen}

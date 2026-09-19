@@ -63,6 +63,18 @@ export async function fetchSubtopicSuggestions(genre: string): Promise<string[]>
   }
 }
 
+// Pull the server's own explanation out of a failed response. Without this the UI only ever saw a
+// status code, so a precise message ("this is a read-only demo") arrived as "generate failed: 403".
+async function serverError(res: Response, fallback: string): Promise<string> {
+  try {
+    const body = (await res.json()) as { error?: string };
+    if (body?.error) return body.error;
+  } catch {
+    /* no JSON body */
+  }
+  return fallback;
+}
+
 /**
  * Ask the backend to generate today's brief on demand for the signed-in user. Used for the
  * first-run "Generate now" (force = false: fills an empty day) and for "Regenerate today" after
@@ -79,7 +91,7 @@ export async function requestTodayBrief(force = false): Promise<void> {
     headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
     body: JSON.stringify({ force }),
   });
-  if (!res.ok) throw new Error(`generate failed: ${res.status}`);
+  if (!res.ok) throw new Error(await serverError(res, "Couldn't start generation."));
 }
 
 /**
@@ -97,5 +109,5 @@ export async function requestPodcast(reportId: string): Promise<void> {
     headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
     body: JSON.stringify({ reportId }),
   });
-  if (!res.ok) throw new Error(`podcast request failed: ${res.status}`);
+  if (!res.ok) throw new Error(await serverError(res, "Couldn't start the podcast."));
 }

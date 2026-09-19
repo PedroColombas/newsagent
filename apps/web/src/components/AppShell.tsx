@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Routes, Route, Navigate, type Location } from "react-router-dom";
 import { AnimatePresence, motion, type Variants } from "motion/react";
+import { usePreferences } from "../hooks/usePreferences";
+import { DemoBanner } from "./DemoBanner";
 import { BottomNav } from "./BottomNav";
 import { MiniPlayer } from "./MiniPlayer";
 import { Today } from "../pages/Today";
@@ -26,6 +28,7 @@ const slide: Variants = {
 // while a report slides over it — rendering the last tab, never the report path.
 export function AppShell({ location }: { location: Location }) {
   const idx = tabIndex(location.pathname);
+  const { prefs } = usePreferences();
 
   // Previous tab index, updated AFTER commit (not during render) so it's StrictMode-safe.
   const prevIdx = useRef(idx);
@@ -36,6 +39,7 @@ export function AppShell({ location }: { location: Location }) {
 
   return (
     <div className="mx-auto flex h-full max-w-md flex-col bg-[var(--paper)]">
+      {prefs?.is_demo && <DemoBanner />}
       <main className="relative flex-1 overflow-hidden">
         <AnimatePresence initial={false} custom={direction}>
           <motion.div
