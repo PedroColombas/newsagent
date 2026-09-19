@@ -24,12 +24,20 @@ export interface FetchedTopic extends TopicQuery {
   sources: ReportSource[]; // dated citations
 }
 
-// Bounded parallelism for the per-topic Perplexity fetch — fast without tripping rate limits.
-const PERPLEXITY_CONCURRENCY = 4;
+// Bounded parallelism for the per-topic Perplexity fetch. Perplexity's limit is per MINUTE, so a
+// wide fan-out trips a 429 on a modest tier — and with the 4-section cap there is little speed left
+// to win anyway. Kept at 2: still parallel, far gentler.
+const PERPLEXITY_CONCURRENCY = 2;
+
+// Sub-second backoff is useless against a per-minute limit — the default 800ms/1.6s spread retries
+// over ~2 seconds and then gives up while the window is still closed. Spread them over ~60s instead.
+const PERPLEXITY_RETRY_ATTEMPTS = 5;
+const PERPLEXITY_RETRY_BASE_MS = 4000;
 
 export const fetchNews = task({
   id: "fetch-news",
-  maxDuration: 300,
+  // Headroom for the per-minute-aware Perplexity backoff, which can add ~a minute per topic.
+  maxDuration: 600,
   run: async (payload: { userId: string; date: string; force?: boolean }) => {
     const { userId, date, force } = payload;
 
@@ -117,14 +125,17 @@ export const fetchNews = task({
           const shareable = (t.level === 1 || t.level === 2) && !t.isPrimer;
           const result = shareable
             ? await getCachedOrFetch(t, date)
-            : await withRetry(() =>
-                withDiagnostics(`perplexity:${t.topic}`, () =>
-                  perplexitySearch(t.query, {
-                    recency: t.recency,
-                    system: SYSTEM_PROMPT,
-                    contextSize: t.isPrimer ? "high" : "medium",
-                  }),
-                ),
+            : await withRetry(
+                () =>
+                  withDiagnostics(`perplexity:${t.topic}`, () =>
+                    perplexitySearch(t.query, {
+                      recency: t.recency,
+                      system: SYSTEM_PROMPT,
+                      contextSize: t.isPrimer ? "high" : "medium",
+                    }),
+                  ),
+                PERPLEXITY_RETRY_ATTEMPTS,
+                PERPLEXITY_RETRY_BASE_MS,
               );
           return { ...t, content: result.content, sources: result.sources };
         },
@@ -183,10 +194,13 @@ async function getCachedOrFetch(
     return { content: hit.content as string, sources: (hit.sources ?? []) as ReportSource[] };
   }
 
-  const result = await withRetry(() =>
-    withDiagnostics(`perplexity:${t.topic}`, () =>
-      perplexitySearch(t.query, { recency: t.recency, system: SYSTEM_PROMPT, contextSize: "medium" }),
-    ),
+  const result = await withRetry(
+    () =>
+      withDiagnostics(`perplexity:${t.topic}`, () =>
+        perplexitySearch(t.query, { recency: t.recency, system: SYSTEM_PROMPT, contextSize: "medium" }),
+      ),
+    PERPLEXITY_RETRY_ATTEMPTS,
+    PERPLEXITY_RETRY_BASE_MS,
   );
   // Populate the shared cache. ignoreDuplicates → if another user won the race, keep their row.
   const { error: writeErr } = await db
