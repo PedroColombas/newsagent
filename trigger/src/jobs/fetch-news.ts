@@ -24,8 +24,12 @@ export interface FetchedTopic extends TopicQuery {
   sources: ReportSource[]; // dated citations
 }
 
-// Bounded parallelism for the per-topic Perplexity fetch — fast without tripping rate limits.
-const PERPLEXITY_CONCURRENCY = 4;
+// Per-topic Perplexity fetches run ONE AT A TIME. Verified 2026-09: a single sonar-pro request with
+// these exact params succeeds, while two in flight return 429 request_rate_limit_exceeded — i.e. the
+// account's limit is on SIMULTANEOUS requests, not throughput, so spacing retries out cannot help.
+// With the 4-section cap this costs ~30s per brief and is the difference between working and not.
+// Raise it only against a rate limit confirmed in the Perplexity dashboard.
+const PERPLEXITY_CONCURRENCY = 1;
 
 export const fetchNews = task({
   id: "fetch-news",
