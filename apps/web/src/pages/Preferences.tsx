@@ -93,6 +93,11 @@ export function Preferences() {
           <p className="mt-1 text-[12.5px] text-[var(--muted)]">
             Each is a section in your brief. Drag to reorder, tap to edit, or add your own.
           </p>
+          {prefs.is_demo && (
+            <p className="mt-1.5 text-[12.5px] font-medium text-[var(--accent)]">
+              Have a play — in the demo, changes here aren't saved.
+            </p>
+          )}
         </div>
         {topicsChanged && todayComplete && (
           <RegenBanner

@@ -80,6 +80,11 @@ export function usePreferences() {
   // Debounced auto-save: whenever prefs change after an edit, persist the editable subset.
   useEffect(() => {
     if (!user || !prefs || !dirty.current) return;
+    // The public demo explores freely but never persists. A visitor can click through genres,
+    // subtopics and interests and watch the screen respond exactly as a real user would, and a
+    // refresh restores the seeded set. Without this, one visitor deleting the topics would leave
+    // the demo empty for everyone until the nightly reset.
+    if (prefs.is_demo) return;
     setStatus("saving");
     const timer = setTimeout(async () => {
       const { error } = await supabase
@@ -106,6 +111,7 @@ export function usePreferences() {
     (keys: string[]) => {
       const cur = prefsRef.current;
       if (!user || !cur || keys.length === 0) return;
+      if (cur.is_demo) return; // same reason: the demo never writes
       const have = new Set(cur.tips_seen ?? []);
       const merged = [...have];
       for (const k of keys) if (!have.has(k)) merged.push(k);

@@ -49,6 +49,22 @@ test.describe("the path a visitor walks", () => {
     await expect(page.getByText(/edit topic/i)).toBeHidden();
   });
 
+  test("nothing a visitor changes is saved", async ({ page }) => {
+    await expect(page.locator('[data-tour="topic"]')).toBeVisible();
+    await page.getByRole("link", { name: "Prefs" }).click();
+    await expect(page.getByText(/4 of 4 topics/i)).toBeVisible();
+
+    // The screen must respond exactly as the real product does...
+    await page.getByRole("button", { name: /^delete /i }).first().click();
+    await expect(page.getByText(/3 of 4 topics/i)).toBeVisible();
+
+    // ...but nothing may be written. The pause outlasts the save debounce, so a real write would
+    // have happened by now; the reload then proves it did not.
+    await page.waitForTimeout(2000);
+    await page.reload();
+    await expect(page.getByText(/4 of 4 topics/i)).toBeVisible();
+  });
+
   test("the setup wizard can be replayed", async ({ page }) => {
     await expect(page.locator('[data-tour="topic"]')).toBeVisible();
     await page.getByRole("link", { name: "Prefs" }).click();
