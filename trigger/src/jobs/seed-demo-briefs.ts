@@ -2,6 +2,7 @@ import { task, logger, wait } from "@trigger.dev/sdk";
 import { supabase } from "../lib/supabase";
 import { fetchNews } from "./fetch-news";
 import { generatePodcast } from "./generate-podcast";
+import { COMMON_PREFS, PRIMED_KEYS, BRIEFS } from "../fixtures/demo";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ONE-OFF SEEDER for the public demo account (BACKLOG Phase 2). Runs the REAL pipeline, so it
@@ -24,74 +25,6 @@ import { generatePodcast } from "./generate-podcast";
 // Pass { dates: [...] } to override. The zero-skew alternative is to run this once a day for four
 // days, which is authentic but costs four days of calendar time.
 // ─────────────────────────────────────────────────────────────────────────────
-
-// Shared across every seeded brief. One mode/voice keeps the demo coherent.
-const COMMON_PREFS = {
-  report_mode: "standard",
-  voice: "analytical",
-  context_depth: "quick",
-  exclusions: "",
-  podcast_enabled: true,
-  topic_order: [] as string[],
-};
-
-// Topics treated as "already followed" so their sections read as today's news rather than a primer.
-// `sub:Health:Biotech` is deliberately ABSENT — it is the single catch-up section in the last brief.
-const PRIMED_KEYS = [
-  "sub:Technology:AI",
-  "sub:Technology:Semiconductors",
-  "sub:Technology:Cybersecurity",
-  "interest:what China is doing in chip development",
-  "sub:Politics:Geopolitics",
-  "sub:Politics:Defense",
-  "sub:World:Conflicts",
-  "sub:World:Diplomacy",
-  "sub:Finance:Central Banks",
-  "sub:Science:Space",
-  "interest:the economics of the energy transition",
-  "interest:breakthroughs in fusion research",
-];
-
-// Four briefs, oldest first. Each is capped at 4 sections (MAX_SECTIONS), so each set has exactly 4.
-const BRIEFS = [
-  {
-    label: "Tech heavy",
-    markRead: true, // anchors the recap gap: the last brief read before the missed days
-    prefs: {
-      genres: ["Technology"],
-      subtopics: { Technology: ["AI", "Semiconductors", "Cybersecurity"] },
-      custom_interests: ["what China is doing in chip development"],
-    },
-  },
-  {
-    label: "Geopolitics",
-    prefs: {
-      genres: ["Politics", "World"],
-      subtopics: { Politics: ["Geopolitics", "Defense"], World: ["Conflicts", "Diplomacy"] },
-      custom_interests: [] as string[],
-    },
-  },
-  {
-    label: "Mixed, custom interests to the fore",
-    prefs: {
-      genres: ["Finance", "Science"],
-      subtopics: { Finance: ["Central Banks"], Science: ["Space"] },
-      custom_interests: [
-        "the economics of the energy transition",
-        "breakthroughs in fusion research",
-      ],
-    },
-  },
-  {
-    label: "Landing brief: news + one catch-up + recap",
-    podcast: true, // the episode a visitor can play immediately
-    prefs: {
-      genres: ["Technology", "World", "Health"],
-      subtopics: { Technology: ["AI"], World: ["Conflicts"], Health: ["Biotech"] },
-      custom_interests: ["what China is doing in chip development"],
-    },
-  },
-] as const;
 
 export const seedDemoBriefs = task({
   id: "seed-demo-briefs",
@@ -144,7 +77,7 @@ export const seedDemoBriefs = task({
       const reportId = await waitForReport(userId, date);
       made.push({ date, label: brief.label, reportId });
 
-      if ("markRead" in brief && brief.markRead) {
+      if (brief.markRead) {
         const { error } = await db
           .from("report_reads")
           .upsert({ user_id: userId, report_id: reportId }, { onConflict: "user_id,report_id" });
@@ -152,7 +85,7 @@ export const seedDemoBriefs = task({
         logger.info("marked read", { date, reportId });
       }
 
-      if ("podcast" in brief && brief.podcast) {
+      if (brief.podcast) {
         await generatePodcast.trigger({ reportId, force: true });
         logger.info("podcast requested", { date, reportId });
       }
