@@ -46,3 +46,6 @@ jobs:
           name: playwright-report
           path: e2e/playwright-report/
           retention-days: 7
+          # Playwright only writes a report when something fails, so a green run has nothing to
+          # upload. Without this every passing run carries a warning annotation.
+          if-no-files-found: ignore
