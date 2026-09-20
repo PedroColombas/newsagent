@@ -163,14 +163,19 @@ them directly what confused them. Both beat simulation at this scale.
 Only fixes a demo visitor will actually see. Everything else waits.
 
 * [x] Remove style and tone options from the settings page.
-* [ ] Fix the catch up icon on new topics. Relabel to "New topic". Add a bubble.
-* [ ] Add a bubble for the "what you missed" feature, first occurrence only.
+* [x] Fix the catch up icon on new topics. Relabel to "New topic". Add a bubble.
+* [x] Add a bubble for the "what you missed" feature, first occurrence only.
       Skip if it does not surface in the demo flow.
-* [ ] Glass treatment on floating surfaces only: mini player, bottom nav, coach
+* [x] Glass treatment on floating surfaces only: mini player, bottom nav, coach
       mark bubbles, edit sheet. Tailwind already ships backdrop blur, so no new
       dependency. Deliberately not a wholesale restyle, which would fight the
       warm paper palette. Worth doing because it lands in the screenshots and
       the recording, which is what a recruiter actually sees.
+
+Note: the two bubble items were dropped rather than built. Coach marks are switched
+off for demo visitors, who arrive already briefed by the landing page, so a bubble no
+visitor will see earns nothing before applications go out. The relabel was done,
+because that one is visible.
 
 ---
 
