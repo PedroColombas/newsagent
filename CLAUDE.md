@@ -1,4 +1,4 @@
-# CLAUDE.md — News Report Generator
+# CLAUDE.md — Daily
 
 Context for Claude Code. Read this first before working on the project.
 

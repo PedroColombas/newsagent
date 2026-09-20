@@ -1,4 +1,4 @@
-# Daily Brief — Overview
+# Daily — Overview
 
 A mobile-first (iPhone) web app that delivers a **personalised daily news briefing**, tailored
 exactly to what each user cares about — with an optional **AI-generated podcast** version of every

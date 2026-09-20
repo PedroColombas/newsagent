@@ -1,10 +1,10 @@
-# BACKLOG.md — Daily Brief
+# BACKLOG.md — Daily
 
 Execution ordered backlog. Work top to bottom. Do not jump phases.
 
 ## The goal this backlog serves
 
-Daily Brief is going on a CV. The target is not a production SaaS; it is an
+Daily is going on a CV. The target is not a production SaaS; it is an
 artifact that proves competence to a recruiter who will look at it for ninety
 seconds and then move on.
 

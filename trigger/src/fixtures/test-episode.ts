@@ -85,7 +85,7 @@ For two years China has been funding a domestic semiconductor toolchain to blunt
 export const FIXTURE_SCRIPT: DialogueTurn[] = [
   {
     speaker: "host",
-    text: "Welcome back to your Daily Brief. Today we've got three things on the table — a battery result that's quietly a big deal, a market that's holding its breath before a rate decision, and a catch-up on what China's doing with chip-making tools. Let's get into it.",
+    text: "Welcome back to Daily. Today we've got three things on the table — a battery result that's quietly a big deal, a market that's holding its breath before a rate decision, and a catch-up on what China's doing with chip-making tools. Let's get into it.",
     section: 0,
   },
   {
