@@ -17,8 +17,9 @@ export function WelcomeScreen({ onStart }: { onStart: () => void }) {
             three-line device that used to sit above the headline is gone rather than competing. */}
         <h1 className="text-[38px] font-bold leading-[1.06] tracking-tight text-[var(--ink)]">
           Welcome to
-          {/* pt-2 buys the arc its clearance — it overshoots the cap height by half an em. */}
-          <span className="block pt-2">
+          {/* The arc overshoots the cap height, so the spec asks for 0.5em clear above it. In em,
+              not px, so it holds if the headline size ever changes. */}
+          <span className="block" style={{ paddingTop: "0.5em" }}>
             <Logo size={38} />.
           </span>
         </h1>
