@@ -77,10 +77,7 @@ export const generateReport = task({
         const missed = lastReadDate ? prior.filter((r) => r.date > lastReadDate) : [];
         if (missed.length > 0) {
           const summary = await withDiagnostics("recap", () =>
-            writeRecap(
-              missed.map((m) => ({ date: m.date, markdown: m.markdown ?? "" })),
-              prefs.voice,
-            ),
+            writeRecap(missed.map((m) => ({ date: m.date, markdown: m.markdown ?? "" }))),
           );
           if (summary) recap = { summary, days: missed.length };
         }

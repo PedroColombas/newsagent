@@ -4,27 +4,10 @@
 //
 // Run from the trigger/ directory:
 //   PowerShell:  $env:ANTHROPIC_API_KEY="sk-ant-..."; npm run preview:synthesis
-//   Try a mode + voice:  npm run preview:synthesis -- deep_dive critical
-//                        npm run preview:synthesis -- briefing conversational
 
 import { synthesize } from "../src/lib/synthesis";
 import type { Preferences } from "@shared/types";
 import type { FetchedTopic } from "../src/jobs/fetch-news";
-
-const MODES = ["briefing", "standard", "deep_dive"];
-const VOICES = ["neutral", "analytical", "conversational", "critical"];
-
-const mode = process.argv[2] ?? "standard";
-const voice = process.argv[3] ?? "analytical";
-
-if (!MODES.includes(mode)) {
-  console.error(`Unknown report mode "${mode}". Use one of: ${MODES.join(", ")}`);
-  process.exit(1);
-}
-if (!VOICES.includes(voice)) {
-  console.error(`Unknown voice "${voice}". Use one of: ${VOICES.join(", ")}`);
-  process.exit(1);
-}
 
 const prefs: Preferences = {
   id: "preview",
@@ -33,8 +16,9 @@ const prefs: Preferences = {
   subtopics: {},
   custom_interests: [],
   exclusions: "",
-  report_mode: mode as Preferences["report_mode"],
-  voice: voice as Preferences["voice"],
+  // Unused by synthesis since length and tone were fixed; kept because the type requires them.
+  report_mode: "standard",
+  voice: "analytical",
   max_topics: 5,
   context_depth: "quick",
   podcast_enabled: true,
@@ -122,7 +106,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  console.log(`\n=== Synthesis preview — mode: ${mode}, voice: ${voice} ===\n`);
+  console.log(`\n=== Synthesis preview ===\n`);
   const { content, markdown } = await synthesize(prefs, topics);
 
   console.log("----- MARKDOWN -----\n");

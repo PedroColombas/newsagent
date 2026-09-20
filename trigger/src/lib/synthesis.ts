@@ -8,8 +8,8 @@ import type { FetchedTopic } from "../jobs/fetch-news";
 //   • Structured outputs (output_config.format): the model returns ONLY the sections; the report
 //     markdown is rendered in code from them — halving output vs having the model emit it twice
 //     (which overloaded heavy all-primer first briefs into stubbing sections).
-//   • report_mode controls length/structure, voice controls tone, exclusions are a hard
-//     filter. Those specs live in the static system prompt below (cache-friendly).
+//   • Length and tone are FIXED (standard length, analytical tone). They used to be user
+//     preferences; removed because they earned nothing. Exclusions remain a hard filter.
 //   • Claude tags each section with the index of the fetched topic it's based on; we
 //     re-attach the real sources/level/timeframe in code, so URLs are never invented.
 //   • Model: Opus (MODELS.synthesis). A guard rejects a degraded (stubbed/short-changed) response.
@@ -17,30 +17,23 @@ import type { FetchedTopic } from "../jobs/fetch-news";
 
 // Static — identical for every user + run, so it sits in `system` with cache_control.
 // (Opus only caches a prefix once it's >=4096 tokens; below that this silently no-ops.)
-const SYNTHESIS_SYSTEM = `You are the synthesis engine for a personalised daily news briefing. You receive pre-fetched, per-topic research and turn it into a single report. You will be told which report mode and voice to use, plus any exclusions — apply them precisely.
+const SYNTHESIS_SYSTEM = `You are the synthesis engine for a personalised daily news briefing. You receive pre-fetched, per-topic research and turn it into a single report.
 
-REPORT MODES (length + structure):
-- briefing: A fast scan. For each topic, a short bold headline then one sentence of context. Use bullet points. The whole report should be readable in under two minutes.
-- standard: For each topic, a short heading then 2-3 tight paragraphs covering what happened, the key facts, and why it matters.
-- deep_dive: Long-form analysis. Focus on the one or two most significant topics and omit minor ones. Give thorough context, implications, and connections — several paragraphs each.
+STRUCTURE: For each topic, write a short heading then 2-3 tight paragraphs covering what happened, the key facts, and why it matters.
 
-VOICES (tone):
-- neutral: Plain, factual, even-handed. No opinion or rhetorical flourish — wire-service style.
-- analytical: Explanatory. Connect cause and effect, add context and implications. Measured, expert tone.
-- conversational: Warm and direct, like a sharp friend explaining over coffee. Use contractions and plain language.
-- critical: Skeptical and evaluative. Question claims, note what is missing or spun, weigh significance. Pointed but fair.
+TONE: Explanatory and analytical. Connect cause and effect, add context and implications. Measured, expert tone.
 
 RULES:
 - Ground every claim in the provided research. Do not invent facts, events, numbers, or quotes.
-- Attribute claims in the prose to their source by name, and on the source's first mention add a brief, neutral note on what the outlet is and how reliable it is — e.g. "According to Nature, a peer-reviewed scientific journal, researchers...", or "Reuters, an international news agency, reports...". Add this note ONLY for outlets you genuinely recognise; if you do not recognise a source, say so honestly rather than implying authority (e.g. "according to [name], a personal blog whose claims aren't independently verified, ..."). Never overstate reliability. Draw the outlet name from the source's title or URL.
-- Keep one section per topic. Mode controls length, not grouping. In deep_dive you may drop low-priority topics, but never merge two topics into one section.
+- Attribute claims in the prose to their source by name, and on the source's first mention add a brief, neutral note on what the outlet is and how reliable it is - e.g. "According to Nature, a peer-reviewed scientific journal, researchers...", or "Reuters, an international news agency, reports...". Add this note ONLY for outlets you genuinely recognise; if you do not recognise a source, say so honestly rather than implying authority (e.g. "according to [name], a personal blog whose claims aren't independently verified, ..."). Never overstate reliability. Draw the outlet name from the source's title or URL.
+- Keep one section per topic. Never merge two topics into one section.
 - State each topic's time window in the prose using its recency value (day = the last 24 hours, week = the last 7 days, month = the last 30 days).
 - If a topic's research is thin or empty, say so in one sentence rather than padding.
 - Apply exclusions as a hard filter: omit anything matching, even if present in the research.
 
-CATCH-UP PRIMERS: Topics marked "primer": true are ones the reader is following for the FIRST time. For those sections, orient a newcomer — set up the current state of the field and why it matters, give the essential background, then the key recent developments, rather than just today's headline. Keep the selected mode and voice, though a primer section may run a little longer than a normal one. Use the given catch-up depth: "quick" = the essentials in a tight paragraph or two; "full" = a thorough but readable get-up-to-speed briefing. Sections not marked primer stay focused on the latest developments.
+CATCH-UP PRIMERS: Topics marked "primer": true are ones the reader is following for the FIRST time. For those sections, orient a newcomer - set up the current state of the field and why it matters, give the essential background, then the key recent developments, rather than just today's headline. A primer section may run a little longer than a normal one. Use the given catch-up depth: "quick" = the essentials in a tight paragraph or two; "full" = a thorough but readable get-up-to-speed briefing. Sections not marked primer stay focused on the latest developments.
 
-OUTPUT: Return JSON matching the schema — a "sections" array, one entry per topic you include, each with "topic_index" (the index of the topic in the input array it is based on), a "heading", and a "summary" written in the selected mode and voice. Do NOT emit a full markdown document or source lists — the report layout and citations are assembled in code.`;
+OUTPUT: Return JSON matching the schema - a "sections" array, one entry per topic you include, each with "topic_index" (the index of the topic in the input array it is based on), a "heading", and a "summary". Do NOT emit a full markdown document or source lists - the report layout and citations are assembled in code.`;
 
 const SYNTHESIS_SCHEMA = {
   type: "object",
@@ -88,16 +81,13 @@ export async function synthesize(
   }));
 
   const userMessage =
-    `Report mode: ${prefs.report_mode}\n` +
-    `Voice: ${prefs.voice}\n` +
     `Catch-up depth (for primer topics): ${prefs.context_depth}\n` +
     `Exclusions: ${prefs.exclusions || "none"}\n\n` +
     `Topics (JSON array; use each item's "index" as topic_index). Items with "primer": true are new to the reader — write those as a catch-up:\n` +
     `${JSON.stringify(topicsForModel)}\n\n` +
     "Write the report now.";
 
-  // Route by mode: Opus's depth only where it earns its cost (deep_dive), else Sonnet.
-  const model = prefs.report_mode === "deep_dive" ? MODELS.synthesisDeepDive : MODELS.synthesis;
+  const model = MODELS.synthesis;
 
   // Streamed: a new user's first brief is ALL primers (longer), so the output is still sizeable even
   // with markdown built in code; adaptive thinking shares this budget too. A non-streaming request at
@@ -147,8 +137,8 @@ export async function synthesize(
 
   // Guard against a model that "gives up" on a heavy brief — dropping topics or stubbing sections
   // with placeholder text (seen on all-primer first briefs). Fail loudly so Trigger retries rather
-  // than shipping a broken report. deep_dive is allowed to focus on fewer topics.
-  const minSections = prefs.report_mode === "deep_dive" ? 1 : topics.length;
+  // than shipping a broken report.
+  const minSections = topics.length;
   const stub = sections.find(
     (s) => s.summary.trim().length < 15 || /\bplaceholder\b/i.test(`${s.topic} ${s.summary}`),
   );

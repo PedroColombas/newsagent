@@ -21,7 +21,6 @@ export function anthropic(): Anthropic {
 export const MODELS = {
   queryTranslation: "claude-haiku-4-5-20251001",
   synthesis: "claude-opus-4-8", // known-good (was Sonnet — reverted, see note above)
-  synthesisDeepDive: "claude-opus-4-8", // deep_dive — depth-first
   podcastScript: "claude-sonnet-4-6",
 } as const;
 

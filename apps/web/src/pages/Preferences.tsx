@@ -4,7 +4,6 @@ import { usePreferences } from "../hooks/usePreferences";
 import { useLatestReport } from "../hooks/useLatestReport";
 import { requestTodayBrief } from "../lib/api";
 import { markPending } from "../lib/pending-generation";
-import { ReportStyleControls } from "../components/preferences/ReportStyleControls";
 import { DeliveryTimeSelect } from "../components/preferences/DeliveryTimeSelect";
 import { TopicManager } from "../components/preferences/TopicManager";
 import { Toggle } from "../components/ui/Toggle";
@@ -105,12 +104,6 @@ export function Preferences() {
         <TopicManager prefs={prefs} update={topicUpdate} />
       </div>
 
-      {/* Report style */}
-      <div className="flex flex-col gap-5" data-tour="prefs-style">
-        <SectionLabel>Report style</SectionLabel>
-        <ReportStyleControls prefs={prefs} update={update} />
-      </div>
-
       {/* Delivery time */}
       <div className="flex items-center justify-between px-1" data-tour="prefs-delivery">
         <div className="flex flex-col gap-0.5">
@@ -159,12 +152,6 @@ export function Preferences() {
               placement: "below", // sit under the topic cards, pointing up, so it never covers them
               title: "Your topics",
               body: `These are the sections of your brief. Drag to reorder, tap to edit, or add up to ${MAX_TOPICS}.`,
-            },
-            {
-              key: "prefs-style",
-              target: '[data-tour="prefs-style"]',
-              title: "How it reads",
-              body: "Set the length — briefing, standard, or deep dive — and the tone it's written in.",
             },
             {
               key: "prefs-delivery",

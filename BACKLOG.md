@@ -150,7 +150,7 @@ them directly what confused them. Both beat simulation at this scale.
 
 Only fixes a demo visitor will actually see. Everything else waits.
 
-* [ ] Remove style and tone options from the settings page.
+* [x] Remove style and tone options from the settings page.
 * [ ] Fix the catch up icon on new topics. Relabel to "New topic". Add a bubble.
 * [ ] Add a bubble for the "what you missed" feature, first occurrence only.
       Skip if it does not surface in the demo flow.
@@ -222,6 +222,15 @@ Not abandoned. Just not before the CV goes out.
   nothing a recruiter can see. Worth learning separately, on a different
   project, after applying.
 * ElevenLabs voice upgrade
+* Demo brief dates go stale. The seeded briefs are fixed to the days they were
+  generated, so given enough time the demo shows dates from months back. Three
+  ways out when it matters: shift the dates nightly (looks current, but the
+  prose and the source dates do not move with them, so a careful reader sees
+  the seam), re-seed for about a pound fifty, or simply name the month in the
+  demo banner. The last is honest, free and cannot break.
+* Podcast speed control, 0.5x to 1.5x in 0.1 steps. A standard feature, absent
+  rather than broken, and the podcast is carried by the screen recording
+  anyway. Small when it comes up: HTML audio has a playback rate built in.
 * Autonomous testing agent that proposes features (see Phase 2.5 for reasoning)
 * General test coverage beyond the demo path
 * SwiftUI and Liquid Glass native rewrite. Not a refactor. SwiftUI is Apple's

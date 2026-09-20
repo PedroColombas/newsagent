@@ -13,10 +13,8 @@ export interface DemoBriefSpec {
   };
 }
 
-// Shared across every seeded brief. One mode and voice keeps the demo coherent.
+// Shared across every seeded brief.
 export const COMMON_PREFS = {
-  report_mode: "standard",
-  voice: "analytical",
   context_depth: "quick",
   exclusions: "",
   podcast_enabled: true,

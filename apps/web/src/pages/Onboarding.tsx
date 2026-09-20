@@ -3,12 +3,11 @@ import { useNavigate } from "react-router-dom";
 import type { Preferences } from "@shared/types";
 import { planReportSections } from "@shared/plan-topics";
 import { toggleGenre, toggleSubtopic } from "../lib/preferences-actions";
-import { REPORT_MODES, VOICES, MAX_TOPICS } from "../lib/preferences-options";
+import { MAX_TOPICS } from "../lib/preferences-options";
 import { topicCount } from "../lib/topic-actions";
 import { GenrePicker } from "../components/preferences/GenrePicker";
 import { SubtopicPicker } from "../components/preferences/SubtopicPicker";
 import { CustomInterestsEditor } from "../components/preferences/CustomInterestsEditor";
-import { ReportStyleControls } from "../components/preferences/ReportStyleControls";
 import { Toggle } from "../components/ui/Toggle";
 import { WelcomeScreen } from "../components/WelcomeScreen";
 import { TopicManager } from "../components/preferences/TopicManager";
@@ -20,7 +19,6 @@ const STEPS = [
     subtitle: "These become the sections of your brief — pick the ones you care about.",
   },
   { title: "Anything specific?", subtitle: "Add topics in your own words — optional." },
-  { title: "How should it read?", subtitle: "Shape the format and voice of your brief." },
 ];
 
 export function Onboarding({
@@ -105,21 +103,6 @@ export function Onboarding({
             />
           </div>
         )}
-        {step === 3 && (
-          <div className="flex flex-col gap-6">
-            <ReportStyleControls prefs={prefs} update={update} />
-            <div className="flex items-center justify-between border-t border-[var(--line)] pt-5">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[14.5px] font-semibold">Daily podcast</span>
-                <span className="text-[12px] text-[var(--muted)]">A conversational audio version</span>
-              </div>
-              <Toggle
-                checked={prefs.podcast_enabled}
-                onChange={(podcast_enabled) => update({ podcast_enabled })}
-              />
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Footer nav */}
@@ -175,30 +158,6 @@ function MicIcon() {
   );
 }
 
-// One labelled line in the edition spec — LABEL over "Value · what it means", so a first-time user
-// sees what each choice actually is (not just the bare value).
-function SpecRow({
-  label,
-  value,
-  hint,
-  divided,
-}: {
-  label: string;
-  value?: string;
-  hint?: string;
-  divided?: boolean;
-}) {
-  return (
-    <div className={`px-4 py-3 ${divided ? "border-t border-[var(--line)]" : ""}`}>
-      <span className="text-[10px] font-bold uppercase tracking-[1.1px] text-[var(--faint)]">{label}</span>
-      <p className="mt-0.5 text-[13.5px] leading-snug">
-        <span className="font-semibold text-[var(--ink)]">{value}</span>
-        {hint && <span className="text-[var(--muted)]"> · {hint}</span>}
-      </p>
-    </div>
-  );
-}
-
 function EditionPreview({
   prefs,
   update,
@@ -210,8 +169,6 @@ function EditionPreview({
   onBack: () => void;
   onStart: () => void;
 }) {
-  const mode = REPORT_MODES.find((m) => m.value === prefs.report_mode);
-  const voice = VOICES.find((v) => v.value === prefs.voice);
   const sections = planReportSections(prefs);
 
   return (
@@ -223,10 +180,8 @@ function EditionPreview({
           Here's what your brief will cover. Drag to reorder, tap to edit, or remove any you don't want.
         </p>
         <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
-          <SpecRow label="Format" value={mode?.label} hint={mode?.hint} />
-          <SpecRow label="Tone" value={voice?.label} hint={voice?.hint} divided />
           {/* Podcast — a live on/off toggle (last chance to enable before the first brief) */}
-          <div className="flex items-center justify-between gap-3 border-t border-[var(--line)] px-4 py-3">
+          <div className="flex items-center justify-between gap-3 px-4 py-3">
             <div className="flex items-center gap-2.5">
               <span
                 className={`flex h-8 w-8 flex-none items-center justify-center rounded-full ${

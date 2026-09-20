@@ -47,9 +47,9 @@ not an afterthought.
   worth the cost); its code path is kept dormant in `trigger/src/lib/tts.ts` behind a flag.
 - **Podcast generation is an explicit user action**, never automatic — it is the most expensive step.
   The app requests it per report via `POST /api/podcast`; `generate-report` no longer chains into it.
-- **Synthesis model** — Opus 4.8 for ALL modes (`MODELS.synthesis` / `synthesisDeepDive`). Routing
-  briefing/standard to Sonnet 4.6 was tried as a cost saving and reverted — it stubbed sections on
-  primer-heavy first briefs. The routing hook remains if it's revisited with a proper before/after.
+- **Synthesis model** — Opus 4.8 (`MODELS.synthesis`). Sonnet 4.6 was tried as a cost saving and
+  reverted — it stubbed sections on primer-heavy first briefs. Worth revisiting only with a proper
+  before/after on quality.
 - Audio stored in **Supabase Storage**, private bucket, namespaced
   `podcast-audio/{user_id}/{report_id}.mp3`.
 - **One Perplexity query per topic** (not one composite). This determines report
@@ -71,17 +71,18 @@ A brief = subtopics + custom interests only (see `planReportSections`). **Hard c
 The cap is enforced in the SHARED planner, so the pipeline can't exceed it either — every section is a
 paid Perplexity query plus synthesis tokens. (Was 8; dropped to 4 for cost control, BACKLOG Phase 0.)
 
-Plus: **exclusions** (free text, injected into the Claude summarisation prompt),
-**report_mode**, **voice**, **delivery_hour** (UTC). The `max_topics` DB column is now unused.
+Plus: **exclusions** (free text, injected into the Claude summarisation prompt) and
+**delivery_hour** (UTC). The `max_topics`, `report_mode` and `voice` columns are now unused.
 
-### Report mode (what the report is)
-- `briefing` — bulleted headlines, one-sentence context
-- `standard` — 2–3 paragraphs per topic
-- `deep_dive` — long-form analysis, 1–2 topics recommended
+### Report length + tone — REMOVED (2026-09)
+Length (`briefing` / `standard` / `deep_dive`) and voice (`neutral` / `analytical` /
+`conversational` / `critical`) used to be user preferences. Removed because they earned nothing a
+reader noticed and widened the surface the demo had to explain. Synthesis is now FIXED at standard
+length and an analytical tone, baked into the prompt. The podcast script is, as before, always
+conversational.
 
-### Voice (how it's written)
-- `neutral` | `analytical` | `conversational` | `critical`
-- Podcast script is ALWAYS rewritten to conversational regardless of voice.
+The `report_mode` and `voice` columns are left in the table UNUSED rather than dropped — same as
+`max_topics`. Dropping is irreversible and buys nothing.
 
 ## Repo structure
 

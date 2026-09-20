@@ -11,8 +11,6 @@ const EDITABLE_COLUMNS = [
   "subtopics",
   "custom_interests",
   "exclusions",
-  "report_mode",
-  "voice",
   "max_topics",
   "context_depth",
   "podcast_enabled",
