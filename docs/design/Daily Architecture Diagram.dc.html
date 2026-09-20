@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  html,body{margin:0;padding:0;background:#e7e5e0;}
+  @media (max-width:760px){
+    .lane{grid-template-columns:1fr !important;gap:10px !important;}
+    .lane__label{text-align:left !important;padding-top:0 !important;}
+  }
+  .pipe-arrow svg{transform:rotate(90deg);}
+  @media (min-width:1040px){
+    .pipeline{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr) !important;gap:0 18px !important;}
+    .pipe-arrow svg{transform:none;}
+  }
+</style>
+</helmet>
+<div style="width:100%;min-height:100vh;background:#e7e5e0;font-family:'Hanken Grotesk',sans-serif;color:#1c1a17;padding:40px 24px 56px;">
+  <div style="max-width:1080px;margin:0 auto;background:#faf8f4;border:1px solid #e4ddd0;border-radius:20px;padding:clamp(26px,3.4vw,44px);">
+
+    <div style="display:flex;flex-direction:column;gap:9px;padding-bottom:30px;border-bottom:1px solid #ece6db;">
+      <h1 style="font-size:clamp(24px,3vw,31px);font-weight:700;letter-spacing:-.024em;margin:0;">D<span style="position:relative;color:#c0512b;">ai<svg viewBox="0 0 26 12" fill="none" stroke="#c0512b" stroke-width="2.4" stroke-linecap="round" style="position:absolute;left:50%;transform:translateX(-50%);top:-.41em;width:1.05em;height:.5em;"><path d="M2 10.5 a14 14 0 0 1 22 0"/></svg></span>ly — how one brief is made</h1>
+      <p style="font-size:clamp(15px,1.7vw,16.5px);color:#6f6a61;line-height:1.5;margin:0;max-width:600px;text-wrap:pretty;">A multi-stage pipeline: retrieval, synthesis, and audio generation.</p>
+    </div>
+
+    <!-- INPUT -->
+    <div class="lane" style="display:grid;grid-template-columns:118px minmax(0,1fr);gap:34px;align-items:center;padding:26px 0 24px;">
+      <span class="lane__label" style="font-size:10.5px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:#6f6a61;text-align:right;">Input</span>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px;flex-wrap:wrap;min-width:0;">
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:0;flex:1;">
+          <span style="font-size:15.5px;font-weight:700;letter-spacing:-.008em;">What the reader chooses</span>
+          <span style="font-size:14.5px;color:#6f6a61;line-height:1.5;text-wrap:pretty;">Genres, subtopics, and interests written in plain English — “what China is doing in chip development”</span>
+        </div>
+        <span style="font-size:12.5px;color:#6f6a61;white-space:nowrap;">React PWA · Vercel</span>
+      </div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div class="lane" style="display:grid;grid-template-columns:118px minmax(0,1fr);gap:34px;align-items:center;padding:24px 0;border-top:1px solid #ece6db;">
+      <span class="lane__label" style="font-size:10.5px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:#6f6a61;text-align:right;">Schedule</span>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px;flex-wrap:wrap;min-width:0;">
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:0;flex:1;">
+          <span style="font-size:15.5px;font-weight:700;letter-spacing:-.008em;">Orchestration</span>
+          <span style="font-size:14.5px;color:#6f6a61;line-height:1.5;text-wrap:pretty;">Runs on a weekday schedule or on demand. Every stage is idempotent and retried independently.</span>
+        </div>
+        <span style="font-size:12.5px;color:#6f6a61;white-space:nowrap;">Trigger.dev</span>
+      </div>
+    </div>
+
+    <!-- PIPELINE -->
+    <div class="lane" style="display:grid;grid-template-columns:118px minmax(0,1fr);gap:34px;padding:28px 0 30px;border-top:1px solid #ece6db;">
+      <span class="lane__label" style="font-size:10.5px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:#c0512b;text-align:right;padding-top:14px;">Pipeline</span>
+      <div class="pipeline" style="display:grid;grid-template-columns:minmax(0,1fr);gap:18px;min-width:0;align-items:start;">
+        <sc-for list="{{ stages }}" as="s" hint-placeholder-count="4">
+          <div style="display:flex;flex-direction:column;min-width:0;border-top:2px solid #c0512b;padding-top:13px;">
+            <div style="display:flex;align-items:baseline;gap:9px;min-height:1.5em;">
+              <span style="font-size:11px;font-weight:700;letter-spacing:.6px;color:#c0512b;">{{ s.num }}</span>
+              <span style="font-size:17px;font-weight:700;letter-spacing:-.012em;">{{ s.name }}</span>
+            </div>
+            <span style="font-size:13px;font-weight:600;letter-spacing:-.005em;color:#c0512b;line-height:1.35;min-height:2.7em;margin-top:7px;">{{ s.tech }}</span>
+            <span style="font-size:13px;color:#6f6a61;line-height:1.45;margin-top:2px;">{{ s.body }}</span>
+          </div>
+          <sc-if value="{{ s.notLast }}" hint-placeholder-val="{{ true }}">
+            <div class="pipe-arrow" style="display:flex;align-items:center;justify-content:center;align-self:center;">
+              <svg width="26" height="12" viewBox="0 0 26 12" fill="none" stroke="#c0512b" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="1" y1="6" x2="23" y2="6"/><path d="M18.5 1.8 L23.2 6 L18.5 10.2"/></svg>
+            </div>
+          </sc-if>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- PERSISTENCE -->
+    <div class="lane" style="display:grid;grid-template-columns:118px minmax(0,1fr);gap:34px;align-items:center;padding:24px 0;border-top:1px solid #ece6db;">
+      <span class="lane__label" style="font-size:10.5px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:#6f6a61;text-align:right;">Storage</span>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px;flex-wrap:wrap;min-width:0;">
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:0;flex:1;">
+          <span style="font-size:15.5px;font-weight:700;letter-spacing:-.008em;">Supabase</span>
+          <span style="font-size:14.5px;color:#6f6a61;line-height:1.5;text-wrap:pretty;">Postgres with row-level security on every table, auth, and a private bucket for episode audio.</span>
+        </div>
+        <span style="font-size:12.5px;color:#6f6a61;white-space:nowrap;">service role writes · anon key reads</span>
+      </div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class="lane" style="display:grid;grid-template-columns:118px minmax(0,1fr);gap:34px;align-items:center;padding:24px 0 4px;border-top:1px solid #ece6db;">
+      <span class="lane__label" style="font-size:10.5px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:#c0512b;text-align:right;">Output</span>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:20px;flex-wrap:wrap;min-width:0;">
+        <span style="font-size:15.5px;font-weight:600;line-height:1.45;min-width:0;flex:1;text-wrap:pretty;">Back in the app: a reader-style brief, and a podcast episode with per-topic chapters.</span>
+        <span style="font-size:12.5px;color:#6f6a61;white-space:nowrap;">mobile-first PWA</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: { &quot;width&quot;: 1180 }
+}">
+class Component extends DCLogic {
+  renderVals() {
+    const defs = [
+      { num: '01', name: 'Resolve', tech: 'Claude Haiku', body: 'Turns each free-text interest into a clean search query, re-read on every run so it stays topical.' },
+      { num: '02', name: 'Retrieve', tech: 'Perplexity sonar-pro', body: 'One search per topic, not one composite. Results are cached per topic per day and shared across every reader.' },
+      { num: '03', name: 'Synthesise', tech: 'Claude Opus', body: 'One sectioned brief. A newly followed topic gets a catch-up primer; days missed get a “while you were away” recap.' },
+      { num: '04', name: 'Narrate', tech: 'Claude Sonnet · OpenAI TTS', body: 'On request. The brief is rewritten as a two-voice interview, spoken in parallel, then assembled with ffmpeg into one episode.' },
+    ];
+    return { stages: defs.map((s, i) => ({ ...s, notLast: i < defs.length - 1 })) };
+  }
+}
+</script>
+</body>
+</html>

@@ -15,7 +15,7 @@ can be inspected without anyone's API credits paying for it.
 
 ## How one brief is made
 
-![Pipeline: topics resolved by Claude Haiku, retrieved via Perplexity sonar-pro, synthesised by Claude Opus, narrated by Claude Sonnet and OpenAI TTS, stored in Supabase](docs/architecture.png)
+![How one brief is made: the reader's topics go into a Trigger.dev pipeline — resolve with Claude Haiku, retrieve with Perplexity sonar-pro, synthesise with Claude Opus, narrate with Claude Sonnet and OpenAI TTS — stored in Supabase and read back in the app](docs/architecture.png)
 
 Four stages, orchestrated by Trigger.dev. Each is a separate task with its own retries and its own
 idempotency check, so a failure in one never sinks the whole run — and a retry never duplicates

@@ -3,7 +3,7 @@
 //
 //   node screenshot.mjs <url> <output.png> [width] [height]
 //
-// e.g.  node screenshot.mjs file:///.../docs/architecture.svg ../docs/architecture.png 1040 600
+// e.g.  node screenshot.mjs http://localhost:8899/landing/ ../landing-full.png 1180 full
 //       node screenshot.mjs https://newsagent-seven.vercel.app ../docs/shot-today.png 390 844
 import { chromium } from "@playwright/test";
 
