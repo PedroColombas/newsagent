@@ -69,20 +69,20 @@ Approach: **reuse the existing app, do not fork it.** A parallel build drifts,
 doubles every fix, and stops resembling the real product within a week. One
 codebase that knows when it is being shown to a stranger.
 
-* [ ] Create a single demo user in the existing Supabase project.
-* [ ] Seed 3 to 4 briefs across varied topic sets, so the demo shows range
+* [x] Create a single demo user in the existing Supabase project.
+* [x] Seed 3 to 4 briefs across varied topic sets, so the demo shows range
       (e.g. one tech heavy, one geopolitics, one mixed with custom interests).
-* [ ] Generate and store one podcast episode for the demo account, audio already
+* [x] Generate and store one podcast episode for the demo account, audio already
       in the storage bucket.
-* [ ] Add an `is_demo` flag on the user or preferences record.
-* [ ] Gate **every paid API call** behind that flag in one place, not scattered
+* [x] Add an `is_demo` flag on the user or preferences record.
+* [x] Gate **every paid API call** behind that flag in one place, not scattered
       through the codebase. Blocked for demo: "Generate now", podcast
       generation, any cron inclusion. If the credentials leak and someone
       hammers the button, nothing should happen.
-* [ ] Build the "View demo" sign in path using fixed credentials, not magic
+* [x] Build the "View demo" sign in path using fixed credentials, not magic
       link. These credentials are effectively public; that is acceptable.
-* [ ] Add a persistent demo banner: sample briefs, generation disabled.
-* [ ] Nightly Trigger.dev job to reset demo preferences to a clean state.
+* [x] Add a persistent demo banner: sample briefs, generation disabled.
+* [x] Nightly Trigger.dev job to reset demo preferences to a clean state.
 
 Design decision: preferences remain **editable** in demo mode. Customisation is
 the core of the product and a recruiter should be able to click through genres,
