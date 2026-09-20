@@ -145,10 +145,10 @@ function TopicEditSheet({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/25" onClick={onClose}>
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/45" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="mx-auto w-full max-w-md rounded-t-3xl border-t border-[var(--line)] bg-[var(--paper)]/55 p-5 pb-8 backdrop-blur-2xl backdrop-saturate-150"
+        className="mx-auto w-full max-w-md rounded-t-3xl border-t border-[var(--line)] bg-[var(--paper)] p-5 pb-8"
       >
         <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-[var(--line)]" />
         <h3 className="text-[17px] font-bold tracking-tight">{isNew ? "Add a topic" : "Edit topic"}</h3>

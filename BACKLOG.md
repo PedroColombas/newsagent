@@ -177,6 +177,13 @@ off for demo visitors, who arrive already briefed by the landing page, so a bubb
 visitor will see earns nothing before applications go out. The relabel was done,
 because that one is visible.
 
+The glass treatment was built, looked at on a real phone, and reverted. The palette is
+white cards on near-white paper, so a translucent surface has almost no contrast behind
+it to reveal: invisible at sensible opacity, washed out at the opacity where it finally
+showed. Glass reads over dark or vibrant backgrounds, and this app is warm editorial
+paper. Recorded here as a decision rather than quietly dropped - a reviewer asking "did
+you consider a more modern visual treatment" gets a real answer.
+
 ---
 
 ## Phase 4 — The shopfront

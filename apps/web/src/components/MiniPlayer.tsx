@@ -13,7 +13,7 @@ export function MiniPlayer() {
 
   return (
     <div className="px-2.5 pb-1.5">
-      <div className="relative flex items-center gap-3 overflow-hidden backdrop-blur-2xl backdrop-saturate-150 rounded-2xl border border-[var(--line)] bg-[var(--surface)]/45 p-2.5 shadow-[0_6px_18px_rgba(45,32,20,0.12)]">
+      <div className="relative flex items-center gap-3 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-2.5 shadow-[0_6px_18px_rgba(45,32,20,0.12)]">
         <div className="absolute inset-x-0 top-0 h-[3px] bg-[var(--line)]">
           <div className="h-[3px] bg-[var(--accent)]" style={{ width: `${pct}%` }} />
         </div>

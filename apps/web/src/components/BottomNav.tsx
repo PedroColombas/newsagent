@@ -56,7 +56,7 @@ const TABS: Tab[] = [
 
 export function BottomNav() {
   return (
-    <nav className="sticky bottom-0 grid grid-cols-4 border-t border-[var(--line)] bg-[var(--paper)]/50 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl backdrop-saturate-150">
+    <nav className="sticky bottom-0 grid grid-cols-4 border-t border-[var(--line)] bg-[var(--paper)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
       {TABS.map((tab) => (
         <NavLink
           key={tab.to}
