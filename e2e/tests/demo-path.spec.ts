@@ -52,17 +52,22 @@ test.describe("the path a visitor walks", () => {
   test("nothing a visitor changes is saved", async ({ page }) => {
     await expect(page.locator('[data-tour="topic"]')).toBeVisible();
     await page.getByRole("link", { name: "Prefs" }).click();
-    await expect(page.getByText(/4 of 4 topics/i)).toBeVisible();
+
+    // Read the count rather than hard-coding it: the test must not care how many topics the demo
+    // happens to hold, or it breaks the moment the seeded set changes.
+    const counter = page.locator('[data-tour="prefs-topics"]').getByText(/of \d+ topics/i);
+    await expect(counter).toBeVisible();
+    const before = ((await counter.textContent()) ?? "").replace(/\s+/g, " ").trim();
 
     // The screen must respond exactly as the real product does...
     await page.getByRole("button", { name: /^delete /i }).first().click();
-    await expect(page.getByText(/3 of 4 topics/i)).toBeVisible();
+    await expect(counter).not.toHaveText(before);
 
     // ...but nothing may be written. The pause outlasts the save debounce, so a real write would
     // have happened by now; the reload then proves it did not.
     await page.waitForTimeout(2000);
     await page.reload();
-    await expect(page.getByText(/4 of 4 topics/i)).toBeVisible();
+    await expect(counter).toHaveText(before);
   });
 
   test("the setup wizard can be replayed", async ({ page }) => {
