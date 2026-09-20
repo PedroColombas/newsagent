@@ -85,7 +85,7 @@ export function Onboarding({
         )}
         {step === 1 && (
           <div className="flex flex-col gap-3">
-            <TopicCount count={count} atCap={atCap} />
+            <CapNotice atCap={atCap} />
             <SubtopicPicker
               genres={prefs.genres}
               subtopics={prefs.subtopics}
@@ -95,7 +95,7 @@ export function Onboarding({
         )}
         {step === 2 && (
           <div className="flex flex-col gap-3">
-            <TopicCount count={count} atCap={atCap} />
+            <CapNotice atCap={atCap} />
             <CustomInterestsEditor
               interests={prefs.custom_interests ?? []}
               onChange={(custom_interests) => update({ custom_interests })}
@@ -128,14 +128,14 @@ export function Onboarding({
   );
 }
 
-function TopicCount({ count, atCap }: { count: number; atCap: boolean }) {
+// Only the cap notice, and only once it bites. There used to be a running count beside it, but the
+// count covers subtopics AND custom interests while each step shows only one of the two — so it
+// read "4 of 4 topics" next to three visible chips. The notice earns its place; the count did not,
+// because a chip that silently stops responding still needs explaining.
+function CapNotice({ atCap }: { atCap: boolean }) {
+  if (!atCap) return null;
   return (
-    <div className="flex items-center justify-between px-1">
-      <span className="text-[12px] text-[var(--muted)]">
-        {count} of {MAX_TOPICS} topics
-      </span>
-      {atCap && <span className="text-[11.5px] text-[var(--faint)]">Limit reached — deselect to swap</span>}
-    </div>
+    <span className="px-1 text-[12px] text-[var(--faint)]">Limit reached — deselect one to swap</span>
   );
 }
 
