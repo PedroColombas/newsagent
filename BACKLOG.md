@@ -191,7 +191,7 @@ you consider a more modern visual treatment" gets a real answer.
 The landing page becomes the CV link, not the app itself. A recruiter needs
 framing before they need the product.
 
-* [ ] Architecture diagram. This carries more weight than the running app: it
+* [x] Architecture diagram. This carries more weight than the running app: it
       shows a multi stage pipeline across orchestration, retrieval, synthesis,
       and audio generation in three seconds.
 * [ ] Short screen recording (roughly 15 to 30 seconds) covering the brief view
