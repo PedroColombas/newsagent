@@ -168,12 +168,12 @@ export function Coachmarks({
     <div className="pointer-events-none fixed inset-0 z-[70]">
       <div
         ref={bubbleRef}
-        className="pointer-events-auto absolute left-0 top-0 rounded-2xl backdrop-blur-xl border border-[var(--line)] bg-[var(--surface)]/85 p-4 shadow-[0_16px_40px_-12px_rgba(20,14,8,0.5)]"
+        className="pointer-events-auto absolute left-0 top-0 rounded-2xl backdrop-blur-2xl backdrop-saturate-150 border border-[var(--line)] bg-[var(--surface)]/55 p-4 shadow-[0_16px_40px_-12px_rgba(20,14,8,0.5)]"
       >
         {/* tail — a rotated square straddling the bubble edge, pointing at the target */}
         <div
           ref={tailRef}
-          className={`absolute h-3 w-3 rotate-45 border-[var(--line)] bg-[var(--surface)]/85 backdrop-blur-xl ${
+          className={`absolute h-3 w-3 rotate-45 border-[var(--line)] bg-[var(--surface)]/55 backdrop-blur-2xl ${
             side === "below" ? "-top-1.5 border-l border-t" : "-bottom-1.5 border-b border-r"
           }`}
           style={{ marginLeft: -6 }}
