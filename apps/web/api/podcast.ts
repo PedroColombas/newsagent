@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { authorisePaidRequest } from "./_lib/paid-request";
+import { authorisePaidRequest, fetchOwnReport } from "./_lib/paid-request";
 
 // POST /api/podcast   (header: Authorization: Bearer <supabase access token>, body: { reportId })
 // Generates the podcast for ONE report, on explicit user request. Audio is the most expensive step
@@ -21,20 +21,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!reportId) return res.status(400).json({ error: "Missing reportId" });
 
   const auth = await authorisePaidRequest(req.headers.authorization);
-  if (!auth.userId || !auth.supabase) {
-    return res.status(auth.status ?? 401).json({ error: auth.error });
-  }
+  if (!auth.userId) return res.status(auth.status ?? 401).json({ error: auth.error });
 
-  // RLS scopes this to the caller's own reports - someone else's id simply returns nothing.
-  const { data: report, error: reportErr } = await auth.supabase
-    .from("reports")
-    .select("id, status")
-    .eq("id", reportId)
-    .maybeSingle();
-  if (reportErr) {
-    console.error("report lookup failed:", reportErr.message);
-    return res.status(502).json({ error: "Could not start the podcast" });
-  }
+  const report = await fetchOwnReport(auth, reportId);
+  if (report === "error") return res.status(502).json({ error: "Could not start the podcast" });
   if (!report) return res.status(404).json({ error: "Report not found" });
   if (report.status !== "complete") {
     return res.status(409).json({ error: "That brief is not ready yet" });

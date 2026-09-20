@@ -1,0 +1,42 @@
+# Runs the demo-path suite against the DEPLOYED app. Nothing local is needed - no database, no
+# secrets beyond the public address, because the demo signs itself in with credentials the app
+# already ships. Set DEMO_BASE_URL as a repository secret (or variable) before enabling this.
+name: e2e
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  demo-path:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: e2e
+        run: npm ci
+
+      - name: Install browser
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+
+      - name: Run the demo-path suite
+        working-directory: e2e
+        env:
+          DEMO_BASE_URL: ${{ secrets.DEMO_BASE_URL }}
+        run: npm test
+
+      - name: Keep the report on failure
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7
