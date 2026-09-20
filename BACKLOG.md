@@ -100,23 +100,23 @@ button, and concludes the app is broken. Handle with banner copy, not logic.
 Scoped deliberately: the paths a recruiter will walk are the ones that must not
 break. This is not general test coverage.
 
-* [ ] Playwright suite covering the demo path end to end: demo sign in, brief
+* [x] Playwright suite covering the demo path end to end: demo sign in, brief
       renders, history navigation, preferences editing, audio player docks and
       expands.
-* [ ] Assert the `is_demo` gate holds, at the level that actually protects the
+* [x] Assert the `is_demo` gate holds, at the level that actually protects the
       budget: signed in as the demo user, POST /api/generate and POST
       /api/podcast must return a refusal. A browser cannot observe "no paid call
       happened", and asserting only that the UI hides a button proves nothing,
       because the credentials are public and the endpoints can be hit directly.
-* [ ] Exploratory pass with Claude Code driving the browser, hunting broken
+* [x] Exploratory pass with Claude Code driving the browser, hunting broken
       states rather than following a script. Reachable by driving the UI: empty
       history, user with zero topics, very long custom interest strings.
-* [ ] Seed the states that cannot be reached by clicking as database rows, then
+* [x] Seed the states that cannot be reached by clicking as database rows, then
       assert the UI renders them: a report stuck in `generating`, a podcast
       episode marked `failed`. Demo mode blocks generation by design, so these
       cannot be produced through the app, and producing them for real would
       defeat Phase 0.
-* [ ] Wire the suite into CI, running against the deployed Vercel URL rather
+* [x] Wire the suite into CI, running against the deployed Vercel URL rather
       than a local dev server. Nothing to reproduce in CI, and it exercises the
       same thing a recruiter hits. Demo credentials in CI secrets are fine,
       being public by design.
@@ -132,6 +132,18 @@ pixel sensitive, and nothing outside the demo path.
 
 Expect this phase to feed Phase 3 rather than cleanly precede it. An exploratory
 pass hunting broken states is how the Phase 3 list grows.
+
+Result: 15 tests, green against the deployed app. The suite earned its keep on the
+first run by catching all three API endpoints returning FUNCTION_INVOCATION_FAILED -
+a real outage nobody had noticed, because the demo has no generate button and
+suggest-subtopics fails silently into its fallback list. Cause: `apps/web` is an ES
+module project, and Node ESM cannot resolve an extensionless relative import, so every
+route importing `./_lib/...` died at module load. suggest-subtopics had been broken
+since it was written.
+
+The states that cannot be clicked into are covered by stubbing database responses
+rather than writing rows, so CI needs no service-role key and the live demo is never
+disturbed.
 
 Explicitly **not** doing: an autonomous agent that recurrently tests the app and
 proposes new features. It has no access to how real users behave, so it would
