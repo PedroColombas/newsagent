@@ -19,12 +19,17 @@ test("the landing page leads into the demo, and the shots all load", async ({ pa
   await page.goto("/landing/");
   await expect(page.getByRole("link", { name: /try the demo/i }).first()).toBeVisible();
 
-  // Every phone frame carries a screenshot; a broken path is invisible against the pale mock.
-  const shots = page.locator("img.shot");
-  await expect(shots).toHaveCount(6);
-  for (let i = 0; i < 6; i++) {
+  // Every image has to actually load; a broken path is invisible against the pale phone mock.
+  const images = page.locator("img");
+  const count = await images.count();
+  expect(count).toBe(7); // six phone shots + the architecture diagram
+  for (let i = 0; i < count; i++) {
     await expect
-      .poll(() => shots.nth(i).evaluate((img: HTMLImageElement) => img.naturalWidth))
+      .poll(() => images.nth(i).evaluate((img: HTMLImageElement) => img.naturalWidth))
       .toBeGreaterThan(0);
   }
+
+  // The technical section is the reason this page exists on a CV, so keep it reachable.
+  await page.getByRole("link", { name: /how it's built/i }).click();
+  await expect(page.getByRole("heading", { name: /four stages/i })).toBeInViewport();
 });

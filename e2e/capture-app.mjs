@@ -47,6 +47,18 @@ await page.getByText(/show less/i).first().click();
 await page.locator('[data-tour="topic"]').first().click();
 await page.waitForURL(/\/report\//);
 await shot("report");
+
+// The seam between two topics — the end of one and the start of the next in the same frame, which
+// is the only way to show on a still that the brief is one continuous scroll.
+await page.evaluate(() => {
+  const el = document.getElementById("s1");
+  const scroller = el?.closest(".overflow-y-auto");
+  if (!el || !scroller) return;
+  // Put the next topic's heading just past the middle, so the tail of the previous one shows above.
+  scroller.scrollTop += el.getBoundingClientRect().top - window.innerHeight * 0.52;
+});
+await shot("report-flow");
+
 await page.goBack();
 
 await page.getByRole("link", { name: "History" }).click();
