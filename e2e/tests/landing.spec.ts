@@ -28,4 +28,12 @@ test("the landing page leads into the demo, and the shots all load", async ({ pa
       .poll(() => images.nth(i).evaluate((img: HTMLImageElement) => img.naturalWidth))
       .toBeGreaterThan(0);
   }
+
+  // "View the code" is deliberately inert until the repo is published (BACKLOG Phase 5). Assert it
+  // is either unlinked or pointing somewhere real — a button wired to "#" or "" is the failure mode
+  // worth catching, because it looks alive and goes nowhere.
+  const code = page.locator("[data-code-link]");
+  await expect(code).toBeVisible();
+  const href = await code.getAttribute("href");
+  if (href !== null) expect(href).toMatch(/^https:\/\/github\.com\//);
 });

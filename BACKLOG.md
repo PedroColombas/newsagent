@@ -217,10 +217,17 @@ framing before they need the product.
 * [ ] Light tidy only: dead code, naming, folder coherence. **No refactors.**
       Legible and honestly described beats immaculate.
 * [ ] Publish the repository.
-* [ ] Wire a "View code" link on the landing page to it. There is no such link
-      today, deliberately — a dead link to a private repo is worse than none.
-      Add it the moment the repo goes public, or the landing page is a dead end
-      for the one reader most worth impressing.
+* [ ] **Wire the "View the code" button.** The button is already on the landing
+      page, next to "Try the demo" in the closing call to action, and is
+      deliberately inert — it carries no `href` until the repo is public,
+      because a link to a private repo 404s. Publishing the repo is therefore
+      not finished until this is done: right now the button is visible and does
+      nothing, which a visitor reads as broken.
+      One line, in `apps/web/public/landing/index.html`, on the element marked
+      `data-code-link`: add `href="https://github.com/PedroColombas/newsagent"`.
+      A test in `e2e/tests/landing.spec.ts` already asserts that the button is
+      either unlinked or pointing at a real github.com URL, so a half-wired
+      version fails CI.
 
 Note on where the technical content lives. The architecture diagram, the stack
 reasoning and the "not built yet" list were built into the landing page first and
