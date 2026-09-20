@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { authorisePaidRequest } from "./_lib/paid-request";
+import { authorisePaidRequest } from "./_lib/paid-request.js";
 
 // POST /api/generate   (header: Authorization: Bearer <supabase access token>)
 // Triggers today's brief on demand for the AUTHENTICATED user. The user is taken from the verified

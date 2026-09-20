@@ -39,18 +39,23 @@ test.describe("the path a visitor walks", () => {
     await page.getByRole("link", { name: "Prefs" }).click();
     await expect(page.locator('[data-tour="prefs-topics"]')).toBeVisible();
 
-    // Open the add-a-topic sheet and back out again. Proves the screen is genuinely interactive
+    // Open a topic for editing and back out again. Proves the screen is genuinely interactive
     // without leaving the demo in a different state than it started.
-    await page.getByRole("button", { name: /add topic/i }).click();
-    await expect(page.getByText(/add a topic/i)).toBeVisible();
+    //
+    // NOT the "add topic" button: the demo sits at the four-topic cap, so that one is disabled.
+    await page.locator('[data-tour="prefs-topics"] button').first().click();
+    await expect(page.getByText(/edit topic/i)).toBeVisible();
     await page.getByRole("button", { name: /^cancel$/i }).click();
-    await expect(page.getByText(/add a topic/i)).toBeHidden();
+    await expect(page.getByText(/edit topic/i)).toBeHidden();
   });
 
   test("the setup wizard can be replayed", async ({ page }) => {
     await expect(page.locator('[data-tour="topic"]')).toBeVisible();
     await page.getByRole("link", { name: "Prefs" }).click();
     await page.getByRole("button", { name: /see how this was set up/i }).click();
+
+    // A replay starts where a first run starts, on the welcome screen, and only then the wizard.
+    await page.getByRole("button", { name: /get started/i }).click();
     await expect(page.getByText(/step 1 of/i)).toBeVisible();
   });
 

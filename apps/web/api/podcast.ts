@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { authorisePaidRequest, fetchOwnReport } from "./_lib/paid-request";
+import { authorisePaidRequest, fetchOwnReport } from "./_lib/paid-request.js";
 
 // POST /api/podcast   (header: Authorization: Bearer <supabase access token>, body: { reportId })
 // Generates the podcast for ONE report, on explicit user request. Audio is the most expensive step

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { suggestSubtopics } from "./_lib/suggest";
-import { authorisePaidRequest } from "./_lib/paid-request";
+import { suggestSubtopics } from "./_lib/suggest.js";
+import { authorisePaidRequest } from "./_lib/paid-request.js";
 
 // POST /api/suggest-subtopics  { genre: string }  ->  { subtopics: string[] }
 // Runs server-side so ANTHROPIC_API_KEY never reaches the client.
