@@ -95,7 +95,7 @@ export function Preferences() {
           </p>
           {prefs.is_demo && (
             <p className="mt-1.5 text-[12.5px] font-medium text-[var(--accent)]">
-              Have a play — in the demo, changes here aren't saved.
+              Have a play — you're in the demo, changes here aren't saved.
             </p>
           )}
         </div>
