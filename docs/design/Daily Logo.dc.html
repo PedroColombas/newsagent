@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  html,body{margin:0;padding:0;background:#e7e5e0;}
+</style>
+</helmet>
+<div style="width:100%;min-height:100vh;background:#e7e5e0;font-family:'Hanken Grotesk',sans-serif;color:#1c1a17;padding:40px 24px 56px;">
+  <div style="max-width:720px;margin:0 auto;">
+
+    <h1 style="font-size:26px;font-weight:700;letter-spacing:-.022em;margin:0;">Daily — logo spec</h1>
+    <p style="font-size:15px;color:#6f6a61;line-height:1.55;margin:9px 0 0;text-wrap:pretty;">Wordmark only, no icon tile. A sunrise arc sits over the "ai" in "Daily". All dimensions are in <code style="font-size:13.5px;background:#faf8f4;border:1px solid #e4ddd0;border-radius:4px;padding:1px 5px;">em</code>, so the whole mark scales from a single <code style="font-size:13.5px;background:#faf8f4;border:1px solid #e4ddd0;border-radius:4px;padding:1px 5px;">font-size</code>.</p>
+
+    <div style="background:#faf8f4;border:1px solid #e4ddd0;border-radius:16px;padding:30px 26px;margin-top:26px;display:flex;flex-direction:column;gap:26px;">
+      <div style="display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;">
+        <span style="font-size:11px;font-weight:700;letter-spacing:1.2px;color:#8a8579;width:74px;flex:none;">48 PX</span>
+        <span style="font-size:48px;font-weight:700;letter-spacing:-.022em;color:#1c1a17;">D<span style="position:relative;color:#c0512b;">ai<svg viewBox="0 0 26 12" fill="none" stroke="#c0512b" stroke-width="2.4" stroke-linecap="round" style="position:absolute;left:50%;transform:translateX(-50%);top:-.41em;width:1.05em;height:.5em;"><path d="M2 10.5 a14 14 0 0 1 22 0"/></svg></span>ly</span>
+      </div>
+      <div style="height:1px;background:#f1ece3;"></div>
+      <div style="display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;">
+        <span style="font-size:11px;font-weight:700;letter-spacing:1.2px;color:#8a8579;width:74px;flex:none;">22 PX · NAV</span>
+        <span style="font-size:22px;font-weight:700;letter-spacing:-.022em;color:#1c1a17;">D<span style="position:relative;color:#c0512b;">ai<svg viewBox="0 0 26 12" fill="none" stroke="#c0512b" stroke-width="2.4" stroke-linecap="round" style="position:absolute;left:50%;transform:translateX(-50%);top:-.41em;width:1.05em;height:.5em;"><path d="M2 10.5 a14 14 0 0 1 22 0"/></svg></span>ly</span>
+      </div>
+      <div style="height:1px;background:#f1ece3;"></div>
+      <div style="display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;">
+        <span style="font-size:11px;font-weight:700;letter-spacing:1.2px;color:#8a8579;width:74px;flex:none;">14 PX</span>
+        <span style="font-size:14px;font-weight:700;letter-spacing:-.022em;color:#1c1a17;">D<span style="position:relative;color:#c0512b;">ai<svg viewBox="0 0 26 12" fill="none" stroke="#c0512b" stroke-width="2.6" stroke-linecap="round" style="position:absolute;left:50%;transform:translateX(-50%);top:-.41em;width:1.05em;height:.5em;"><path d="M2 10.5 a14 14 0 0 1 22 0"/></svg></span>ly</span>
+      </div>
+      <div style="height:1px;background:#f1ece3;"></div>
+      <div style="display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;background:#1c1a17;margin:-6px -12px;padding:16px 12px;border-radius:10px;">
+        <span style="font-size:11px;font-weight:700;letter-spacing:1.2px;color:#857e71;width:74px;flex:none;">ON DARK</span>
+        <span style="font-size:22px;font-weight:700;letter-spacing:-.022em;color:#f3efe7;">D<span style="position:relative;color:#e2794d;">ai<svg viewBox="0 0 26 12" fill="none" stroke="#e2794d" stroke-width="2.4" stroke-linecap="round" style="position:absolute;left:50%;transform:translateX(-50%);top:-.41em;width:1.05em;height:.5em;"><path d="M2 10.5 a14 14 0 0 1 22 0"/></svg></span>ly</span>
+      </div>
+    </div>
+
+    <span style="display:block;font-size:11px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:#8a8579;margin-top:30px;">Markup</span>
+    <pre style="background:#1c1a17;color:#f3efe7;border-radius:14px;padding:20px;margin:11px 0 0;overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.65;white-space:pre;">&lt;span class="daily-logo"&gt;D&lt;span class="daily-logo__ai"&gt;ai&lt;svg viewBox="0 0 26 12" fill="none" stroke="currentColor"
+    stroke-width="2.4" stroke-linecap="round" aria-hidden="true"&gt;
+    &lt;path d="M2 10.5 a14 14 0 0 1 22 0"/&gt;
+  &lt;/svg&gt;&lt;/span&gt;ly&lt;/span&gt;</pre>
+
+    <span style="display:block;font-size:11px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:#8a8579;margin-top:22px;">CSS</span>
+    <pre style="background:#1c1a17;color:#f3efe7;border-radius:14px;padding:20px;margin:11px 0 0;overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.65;white-space:pre;">.daily-logo {
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  color: #1c1a17;          /* ink        */
+  font-size: 22px;         /* only knob  */
+}
+.daily-logo__ai {
+  position: relative;
+  color: #c0512b;          /* burnt orange */
+}
+.daily-logo__ai svg {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -0.41em;            /* arc clears the dot of the i */
+  width: 1.05em;
+  height: 0.5em;
+}
+
+/* dark surfaces */
+.daily-logo--dark            { color: #f3efe7; }
+.daily-logo--dark .daily-logo__ai { color: #e2794d; }</pre>
+
+    <div style="border-left:3px solid #c0512b;background:#faf8f4;border-radius:0 14px 14px 0;padding:18px 20px;margin-top:26px;">
+      <span style="font-size:11px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:#c0512b;">Rules</span>
+      <ul style="font-size:14.5px;line-height:1.65;color:#3c3933;margin:10px 0 0;padding-left:19px;">
+        <li>The arc is the only mark. Never pair it with an icon tile.</li>
+        <li>Arc and "ai" always share one colour — orange on light, <span style="color:#c0512b;font-weight:600;">#c0512b</span>; lighter orange on dark, <span style="color:#c0512b;font-weight:600;">#e2794d</span>.</li>
+        <li>Below 14px the arc thickens to <span style="font-weight:600;">stroke-width 2.6</span> so it survives.</li>
+        <li>Leave at least 0.5em clear above the arc — it overshoots the cap height.</li>
+        <li>Name is "Daily". "Brief" has been retired.</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

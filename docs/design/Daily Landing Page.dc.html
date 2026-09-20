@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+  *{box-sizing:border-box;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  html,body{margin:0;padding:0;background:#faf8f4;}
+  a{color:#c0512b;text-decoration:none;}
+  a:hover{color:#9c3f20;}
+  @media (max-width:820px){
+    .feat{grid-template-columns:1fr !important;gap:32px !important;}
+    .feat .phone{grid-column:1 !important;grid-row:2 !important;justify-self:center !important;}
+    .feat .copy{grid-column:1 !important;grid-row:1 !important;}
+    .hero-grid{grid-template-columns:1fr !important;text-align:center;}
+    .hero-grid .copy{align-items:center !important;}
+    .hero-grid .phone{justify-self:center !important;}
+  }
+</style>
+</helmet>
+<div style="width:100%;background:#faf8f4;font-family:'Hanken Grotesk',sans-serif;color:#1c1a17;">
+
+  <div style="max-width:1080px;margin:0 auto;padding:0 28px;">
+
+    <!-- NAV -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:26px 0;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:34px;height:34px;border-radius:10px;background:#c0512b;display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#faf8f4" stroke-width="2" stroke-linecap="round"><path d="M7.4 13.2 a4.6 4.6 0 0 1 9.2 0"/><line x1="4" y1="13.2" x2="20" y2="13.2"/><line x1="7.6" y1="17.4" x2="16.4" y2="17.4"/></svg></div>
+        <span style="font-size:17.5px;font-weight:700;letter-spacing:-.02em;">Daily Brief</span>
+      </div>
+      <span style="border:1.5px solid #1c1a17;border-radius:22px;padding:8px 18px;font-size:14px;font-weight:600;cursor:pointer;">Try the demo</span>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero-grid" style="display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:56px;align-items:center;padding:56px 0 76px;">
+      <div class="copy" style="display:flex;flex-direction:column;align-items:flex-start;min-width:0;">
+        <span style="font-size:12px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:#c0512b;">Built for the commute</span>
+        <h1 style="font-size:clamp(38px,5.4vw,62px);font-weight:700;letter-spacing:-.032em;line-height:1.02;margin:18px 0 0;text-wrap:pretty;">Your commute.<br>Fully briefed.</h1>
+        <p style="font-size:clamp(16px,1.7vw,19px);color:#6f6a61;line-height:1.55;margin:22px 0 0;max-width:470px;text-wrap:pretty;">A personalised news briefing, written fresh each weekday from the topics you choose. Long shifts, early starts, no time to read around — one report covers it.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:32px;">
+          <span style="background:#c0512b;color:#fff;border-radius:26px;padding:14px 26px;font-size:15.5px;font-weight:600;cursor:pointer;">Try the demo</span>
+          <span style="border:1.5px solid #ddd6ca;background:#fff;border-radius:26px;padding:14px 26px;font-size:15.5px;font-weight:600;cursor:pointer;">See how it works</span>
+        </div>
+        <span style="font-size:13px;color:#8a8579;margin-top:18px;">Arrives whenever you want it · read in four minutes, or listen on the way in.</span>
+      </div>
+      <div class="phone" style="justify-self:end;min-width:0;">
+        <div style="width:min(300px,78vw);aspect-ratio:320/688;background:#0e0e10;border-radius:46px;padding:10px;box-shadow:0 34px 64px -20px rgba(45,32,20,.45),0 8px 18px rgba(0,0,0,.14);">
+          <div style="position:relative;width:100%;height:100%;border-radius:37px;overflow:hidden;background:#f1ece3;">
+            <image-slot id="lp-hero" shape="rect" placeholder="Today screen — the daily report"></image-slot>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:1px;background:#ece6db;"></div>
+
+    <!-- FEATURES -->
+    <div style="display:flex;flex-direction:column;gap:0;">
+      <sc-for list="{{ features }}" as="f" hint-placeholder-count="5">
+        <div class="feat" style="display:grid;grid-template-columns:{{ f.cols }};gap:64px;align-items:center;padding:84px 0;border-bottom:1px solid #ece6db;">
+          <div class="phone" style="grid-column:{{ f.phoneCol }};justify-self:{{ f.phoneAlign }};min-width:0;">
+            <div style="width:min(286px,74vw);aspect-ratio:320/688;background:#0e0e10;border-radius:44px;padding:10px;box-shadow:0 28px 56px -20px rgba(45,32,20,.4),0 6px 14px rgba(0,0,0,.12);">
+              <div style="position:relative;width:100%;height:100%;border-radius:35px;overflow:hidden;background:#f1ece3;">
+                <image-slot id="{{ f.slotId }}" shape="rect" placeholder="{{ f.placeholder }}"></image-slot>
+              </div>
+            </div>
+          </div>
+          <div class="copy" style="grid-column:{{ f.copyCol }};grid-row:1;display:flex;flex-direction:column;align-items:flex-start;min-width:0;">
+            <span style="font-size:12px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:#c0512b;">{{ f.kicker }}</span>
+            <h2 style="font-size:clamp(27px,3.4vw,38px);font-weight:700;letter-spacing:-.026em;line-height:1.08;margin:15px 0 0;text-wrap:pretty;">{{ f.title }}</h2>
+            <p style="font-size:clamp(15.5px,1.6vw,17.5px);color:#6f6a61;line-height:1.58;margin:17px 0 0;max-width:430px;text-wrap:pretty;">{{ f.body }}</p>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- CLOSER -->
+    <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:92px 0 96px;">
+      <h2 style="font-size:clamp(30px,4vw,44px);font-weight:700;letter-spacing:-.028em;line-height:1.06;margin:0;max-width:640px;text-wrap:pretty;">Tomorrow's edition is already being written.</h2>
+      <p style="font-size:17px;color:#6f6a61;line-height:1.55;margin:18px 0 0;max-width:440px;text-wrap:pretty;">Choose your topics once. We handle the reading, every weekday morning.</p>
+      <span style="background:#c0512b;color:#fff;border-radius:26px;padding:15px 30px;font-size:16px;font-weight:600;margin-top:30px;cursor:pointer;">Try the demo</span>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;padding:26px 0 40px;border-top:1px solid #ece6db;">
+      <span style="font-size:13px;color:#8a8579;">© 2026 Daily Brief</span>
+      <span style="font-size:13px;color:#8a8579;">Privacy · Terms · Contact</span>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: { &quot;width&quot;: 1080 }
+}">
+class Component extends DCLogic {
+  renderVals() {
+    const defs = [
+      {
+        kicker: 'Personalised setup',
+        title: 'Tell us once what you care about.',
+        body: 'Pick your genres, narrow them to subtopics, and add any thread you want followed — a question, a niche, even a single company. Then preview the edition you are about to get, section by section, before the first one arrives.',
+        slotId: 'lp-setup', placeholder: 'Wizard + edition preview',
+      },
+      {
+        kicker: 'Your daily report',
+        title: 'Every morning, one edition. Nothing else.',
+        body: 'No feed, no infinite scroll, no notifications all day. One report waiting at the time you choose, with your topics summarised and sourced.',
+        slotId: 'lp-today', placeholder: 'Today screen — your report',
+      },
+      {
+        kicker: 'One continuous read',
+        title: 'Read it end to end, without tapping.',
+        body: 'Topics flow one into the next in a single scroll — no tapping between articles while you are standing on a train. Each section carries its own sources, one tap away, so you can check the reporting behind any claim.',
+        slotId: 'lp-reading', placeholder: 'Reading view — continuous report',
+      },
+      {
+        kicker: 'What you missed',
+        title: 'Been away? Start with the catch-up.',
+        body: 'Skip a few days and your next report opens with a summary of what changed while you were gone. A week off means a week accounted for — no scrolling back to work out what you missed.',
+        slotId: 'lp-missed', placeholder: 'What you missed — catch-up summary',
+      },
+      {
+        kicker: 'Listen instead',
+        title: 'The same briefing, narrated.',
+        body: 'Every edition comes as an eight-minute audio version. Press play when you leave the house and arrive knowing what happened — hands free, eyes up, no reading required.',
+        slotId: 'lp-podcast', placeholder: 'Podcast player',
+      },
+    ];
+    const features = defs.map((f, i) => {
+      const left = i % 2 === 0;
+      return {
+        ...f,
+        cols: 'minmax(0,1fr) minmax(0,1fr)',
+        phoneCol: left ? '1' : '2',
+        copyCol: left ? '2' : '1',
+        phoneAlign: left ? 'start' : 'end',
+      };
+    });
+    return { features };
+  }
+}
+</script>
+</body>
+</html>

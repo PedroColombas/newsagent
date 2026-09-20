@@ -36,3 +36,9 @@ Thumbs.db
 .vscode/
 *.swp
 captures/
+
+# Loose design exports dropped in the repo root while working. The ones worth keeping live in
+# docs/design/; these are duplicates and one-off exports, kept locally but never published.
+/*.dc.html
+/*.pdf
+/Landing Page/
