@@ -176,7 +176,7 @@ function Section({
         </span>
         {section.isPrimer && (
           <span className="rounded-full bg-[var(--accent)]/12 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--accent)]">
-            Catch-up
+            New topic
           </span>
         )}
       </div>
