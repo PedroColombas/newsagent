@@ -44,6 +44,34 @@
   }
 }
 
+/* Appearance override. The media query above follows the system; these two win over it when the
+   reader has chosen for themselves, because an attribute selector outranks a bare :root and a
+   media query adds no specificity of its own. `data-theme` is set on <html> by a script in
+   index.html before first paint, so choosing light on a dark phone never flashes dark first. */
+:root[data-theme="dark"] {
+  --paper: #161410;
+  --surface: #201d18;
+  --ink: #f3efe7;
+  --muted: #a39c8f;
+  --faint: #857e71;
+  --line: #2c281f;
+  --accent: #e2794d;
+  --on-accent: #1a120c;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --paper: #faf8f4; /* screen background */
+  --surface: #ffffff; /* cards / inputs */
+  --ink: #1c1a17; /* primary text */
+  --muted: #6f6a61; /* secondary text */
+  --faint: #8a8579; /* labels / tertiary text */
+  --line: #ece6db; /* dividers / borders */
+  --accent: #c0512b; /* terracotta */
+  --on-accent: #ffffff; /* text on the accent */
+  color-scheme: light;
+}
+
 html,
 body,
 #root {

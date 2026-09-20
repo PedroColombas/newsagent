@@ -16,6 +16,15 @@
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="apple-touch-icon" href="/icon.svg" />
     <title>Daily</title>
+    <!-- Apply the saved appearance before anything paints. If this ran inside React instead, a
+         reader who chose light on a dark phone would see a dark flash on every load. Kept tiny and
+         inline on purpose; it must not wait for a module to fetch. -->
+    <script>
+      try {
+        var t = localStorage.getItem("daily-theme");
+        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

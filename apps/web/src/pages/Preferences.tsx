@@ -10,6 +10,7 @@ import { Toggle } from "../components/ui/Toggle";
 import { Coachmarks } from "../components/Coachmarks";
 import { MAX_TOPICS } from "../lib/preferences-options";
 import { useSetup } from "../lib/setup";
+import { readTheme, applyTheme, type Theme } from "../lib/theme";
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
@@ -20,6 +21,13 @@ function SectionLabel({ children }: { children: ReactNode }) {
 }
 
 export function Preferences() {
+  const [theme, setThemeState] = useState<Theme>(readTheme);
+
+  function setTheme(next: Theme) {
+    setThemeState(next);
+    applyTheme(next);
+  }
+
   const { prefs, loading, status, update, markTipsSeen } = usePreferences();
   const setup = useSetup();
   const { report } = useLatestReport();
@@ -130,6 +138,18 @@ export function Preferences() {
         <Toggle checked={prefs.podcast_enabled} onChange={(podcast_enabled) => update({ podcast_enabled })} />
       </div>
 
+      {/* Appearance — a device setting, not an account one, so it is the one control on this page
+          that is not backed by the preferences table. See lib/theme.ts. */}
+      <div className="flex items-center justify-between px-1">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[14.5px] font-semibold">Appearance</span>
+          <span className="text-[12px] text-[var(--muted)]">
+            {theme === "system" ? "Following your device" : `Always ${theme}`}
+          </span>
+        </div>
+        <AppearanceSelect value={theme} onChange={setTheme} />
+      </div>
+
       {/* Replay of the setup wizard — otherwise the screen that does the most to explain the
           product is only ever seen once, on a first run. */}
       {setup && (
@@ -174,6 +194,25 @@ export function Preferences() {
         />
       )}
     </section>
+  );
+}
+
+function AppearanceSelect({ value, onChange }: { value: Theme; onChange: (t: Theme) => void }) {
+  return (
+    <div className="flex gap-1 rounded-full bg-[var(--line)]/60 p-0.5">
+      {(["system", "light", "dark"] as const).map((t) => (
+        <button
+          key={t}
+          onClick={() => onChange(t)}
+          aria-pressed={value === t}
+          className={`rounded-full px-3 py-1.5 text-[12.5px] font-medium capitalize ${
+            value === t ? "bg-[var(--surface)] text-[var(--ink)] shadow-sm" : "text-[var(--muted)]"
+          }`}
+        >
+          {t === "system" ? "Auto" : t}
+        </button>
+      ))}
+    </div>
   );
 }
 

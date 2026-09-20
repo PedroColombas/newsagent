@@ -49,6 +49,26 @@ test.describe("the path a visitor walks", () => {
     await expect(page.getByText(/edit topic/i)).toBeHidden();
   });
 
+  test("appearance can be forced away from the device setting", async ({ page }) => {
+    await page.getByRole("link", { name: "Prefs" }).click();
+    const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+
+    // Both directions, so this catches the specificity trap: the override has to beat the
+    // prefers-color-scheme media query whichever way the device is set.
+    await page.getByRole("button", { name: "dark", exact: true }).click();
+    const dark = await bg();
+    await page.getByRole("button", { name: "light", exact: true }).click();
+    const light = await bg();
+    expect(dark).not.toBe(light);
+
+    // And it has to survive a reload, since that is the whole point of remembering it.
+    await page.reload();
+    await expect.poll(bg).toBe(light);
+
+    await page.getByRole("link", { name: "Prefs" }).click();
+    await page.getByRole("button", { name: "Auto", exact: true }).click();
+  });
+
   test("nothing a visitor changes is saved", async ({ page }) => {
     await expect(page.locator('[data-tour="topic"]')).toBeVisible();
     await page.getByRole("link", { name: "Prefs" }).click();
