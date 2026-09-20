@@ -11,12 +11,20 @@ test("the landing page is not swallowed by the app's service worker", async ({ p
   });
 
   await page.goto("/landing/");
-  await expect(page).toHaveTitle(/personalised news briefing/i);
-  await expect(page.getByRole("heading", { name: /the stack, and why/i })).toBeVisible();
+  await expect(page).toHaveTitle(/daily brief/i);
+  await expect(page.getByRole("heading", { name: /fully briefed/i })).toBeVisible();
 });
 
-test("the landing page offers both ways in", async ({ page }) => {
+test("the landing page leads into the demo, and the shots all load", async ({ page }) => {
   await page.goto("/landing/");
   await expect(page.getByRole("link", { name: /try the demo/i }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: /view the code/i }).first()).toBeVisible();
+
+  // Every phone frame carries a screenshot; a broken path is invisible against the pale mock.
+  const shots = page.locator("img.shot");
+  await expect(shots).toHaveCount(6);
+  for (let i = 0; i < 6; i++) {
+    await expect
+      .poll(() => shots.nth(i).evaluate((img: HTMLImageElement) => img.naturalWidth))
+      .toBeGreaterThan(0);
+  }
 });

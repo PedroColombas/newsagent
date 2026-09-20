@@ -39,6 +39,11 @@ await page.locator('[data-tour="topic"]').first().waitFor({ timeout: 30000 });
 
 await shot("today");
 
+// The catch-up, opened — the "what you missed" story needs a shot of its own.
+await page.getByText(/read more/i).first().click();
+await shot("recap");
+await page.getByText(/show less/i).first().click();
+
 await page.locator('[data-tour="topic"]').first().click();
 await page.waitForURL(/\/report\//);
 await shot("report");
