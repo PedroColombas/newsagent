@@ -22,14 +22,10 @@ test("the landing page leads into the demo, and the shots all load", async ({ pa
   // Every image has to actually load; a broken path is invisible against the pale phone mock.
   const images = page.locator("img");
   const count = await images.count();
-  expect(count).toBe(7); // six phone shots + the architecture diagram
+  expect(count).toBe(6); // one phone shot per section
   for (let i = 0; i < count; i++) {
     await expect
       .poll(() => images.nth(i).evaluate((img: HTMLImageElement) => img.naturalWidth))
       .toBeGreaterThan(0);
   }
-
-  // The technical section is the reason this page exists on a CV, so keep it reachable.
-  await page.getByRole("link", { name: /how it's built/i }).click();
-  await expect(page.getByRole("heading", { name: /four stages/i })).toBeInViewport();
 });

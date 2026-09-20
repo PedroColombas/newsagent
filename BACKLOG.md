@@ -197,8 +197,9 @@ framing before they need the product.
 * [ ] Short screen recording (roughly 15 to 30 seconds) covering the brief view
       and the podcast player docking. Nobody will sit and listen to audio in a
       browser tab; a clip communicates it instantly.
-* [ ] Landing page: problem, screenshots or the recording, architecture diagram,
-      stack, and two buttons: **Try the demo** and **View code**.
+* [x] Landing page: problem, screenshots, and a single **Try the demo** button.
+      The architecture diagram and the stack were built into this page first, then
+      moved to the README — see the note below.
 * [ ] Domain decision: own domain (roughly 10 euros a year, reads as more
       considered on a CV) or a route on the existing Vercel project.
 
@@ -206,7 +207,7 @@ framing before they need the product.
 
 ## Phase 5 — GitHub
 
-* [ ] Write the README. This is the deliverable, not the code. Most readers will
+* [x] Write the README. This is the deliverable, not the code. Most readers will
       read the README and skim two files. It carries:
       * the architecture diagram
       * the pipeline explanation, stage by stage
@@ -216,7 +217,17 @@ framing before they need the product.
 * [ ] Light tidy only: dead code, naming, folder coherence. **No refactors.**
       Legible and honestly described beats immaculate.
 * [ ] Publish the repository.
-* [ ] Wire the landing page "View code" button to it.
+* [ ] Wire a "View code" link on the landing page to it. There is no such link
+      today, deliberately — a dead link to a private repo is worse than none.
+      Add it the moment the repo goes public, or the landing page is a dead end
+      for the one reader most worth impressing.
+
+Note on where the technical content lives. The architecture diagram, the stack
+reasoning and the "not built yet" list were built into the landing page first and
+then moved here, to the README. Two audiences, two documents: the landing page
+sells the product to someone deciding whether to click the demo, and a pipeline
+diagram in the middle of that interrupts it. A reader who wants to know how it
+works is already willing to open a repo. The diagram now lives in `docs/`.
 
 The roadmap section is where user selected sources and billing belong. Listing
 them reads as product judgement, not as a gap.
