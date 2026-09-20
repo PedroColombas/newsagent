@@ -67,6 +67,12 @@ export default defineConfig(({ mode }) => {
       devSuggestApi(env.ANTHROPIC_API_KEY, env.PERPLEXITY_API_KEY),
       VitePWA({
         registerType: "autoUpdate",
+        workbox: {
+          // WITHOUT THIS the service worker serves the app shell for every navigation, so a visitor
+          // opening /landing gets the login screen instead of the landing page. curl sees the real
+          // page (no service worker), which makes this a confusing one to diagnose.
+          navigateFallbackDenylist: [/^\/landing/, /^\/api\//],
+        },
         manifest: {
           name: "Daily Brief",
           short_name: "Daily Brief",
