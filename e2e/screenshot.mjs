@@ -15,11 +15,14 @@ if (!url || !out) {
 
 const browser = await chromium.launch();
 // deviceScaleFactor 2 so the result stays sharp on a retina screen.
+// height "full" captures the whole page at 1x, which is what you want for reviewing a long page.
+const full = h === "full";
 const page = await browser.newPage({
-  viewport: { width: Number(w), height: Number(h) },
-  deviceScaleFactor: 2,
+  viewport: { width: Number(w), height: full ? 900 : Number(h) },
+  deviceScaleFactor: full ? 1 : 2,
 });
 await page.goto(url);
-await page.screenshot({ path: out });
+await page.waitForTimeout(800); // let webfonts settle
+await page.screenshot({ path: out, fullPage: full });
 await browser.close();
 console.log("wrote", out);

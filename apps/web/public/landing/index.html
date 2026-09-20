@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Daily Brief — a personalised news briefing that writes and narrates itself</title>
+    <meta
+      name="description"
+      content="A personalised daily news briefing built on a multi-stage AI pipeline: Perplexity for retrieval, Claude for synthesis, OpenAI for narration, orchestrated with Trigger.dev."
+    />
+
+    <!-- Link previews, for when this URL is pasted into a CV, LinkedIn or a message. -->
+    <meta property="og:title" content="Daily Brief" />
+    <meta
+      property="og:description"
+      content="A personalised news briefing, written fresh each weekday from the topics you choose — and narrated as a two-voice podcast."
+    />
+    <meta property="og:image" content="/landing/architecture.png" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --paper: #faf8f4;
+        --surface: #ffffff;
+        --ink: #1c1a17;
+        --muted: #6f6a61;
+        --faint: #8a8579;
+        --line: #ece6db;
+        --accent: #c0512b;
+        --on-accent: #ffffff;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+      section { padding: 56px 0; border-top: 1px solid var(--line); }
+      section:first-of-type { border-top: 0; }
+
+      h1 { font-size: clamp(38px, 7vw, 60px); line-height: 1.05; letter-spacing: -1.4px; margin: 20px 0 0; }
+      h2 { font-size: clamp(22px, 3.4vw, 27px); letter-spacing: -0.5px; margin: 0 0 14px; }
+      p { margin: 0 0 16px; }
+
+      .eyebrow {
+        font-size: 11.5px; font-weight: 700; letter-spacing: 1.6px;
+        text-transform: uppercase; color: var(--accent); margin: 0;
+      }
+      .lede { font-size: clamp(17px, 2.3vw, 20px); color: var(--muted); max-width: 46ch; margin-top: 18px; }
+      .body { color: var(--muted); max-width: 62ch; }
+      .fine { font-size: 13px; color: var(--faint); }
+
+      /* Hero -------------------------------------------------------------- */
+      header { padding: 72px 0 8px; }
+      .mark {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 54px; height: 54px; border-radius: 16px; background: var(--accent);
+        box-shadow: 0 8px 20px -8px rgba(192, 81, 43, 0.55);
+      }
+      .cta { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 12px; }
+      .btn {
+        display: inline-block; padding: 13px 22px; border-radius: 14px;
+        font-size: 15px; font-weight: 600; text-decoration: none;
+      }
+      .btn-primary { background: var(--accent); color: var(--on-accent); box-shadow: 0 6px 16px -6px rgba(192,81,43,.6); }
+      .btn-ghost { border: 1px solid var(--line); color: var(--ink); background: var(--surface); }
+
+      /* Screens ----------------------------------------------------------- */
+      .shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; margin-top: 28px; }
+      .shots figure { margin: 0; }
+      .shots img {
+        width: 100%; height: auto; display: block;
+        border: 1px solid var(--line); border-radius: 18px;
+        box-shadow: 0 18px 40px -22px rgba(45, 32, 20, 0.5);
+      }
+      .shots figcaption { font-size: 13.5px; color: var(--muted); margin-top: 12px; }
+
+      /* Diagram ----------------------------------------------------------- */
+      .diagram { width: 100%; height: auto; display: block; margin-top: 24px; border-radius: 16px; }
+
+      /* Stack ------------------------------------------------------------- */
+      .stack { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; margin-top: 26px; }
+      .stack div { border-left: 2px solid var(--accent); padding-left: 16px; }
+      .stack h3 { margin: 0 0 4px; font-size: 15px; }
+      .stack p { margin: 0; font-size: 14px; color: var(--muted); }
+
+      /* Roadmap ----------------------------------------------------------- */
+      ul.plain { margin: 0; padding-left: 20px; color: var(--muted); max-width: 62ch; }
+      ul.plain li { margin-bottom: 8px; }
+
+      footer { padding: 40px 0 64px; color: var(--faint); font-size: 13.5px; }
+      footer a { color: var(--muted); }
+
+      @media (max-width: 720px) {
+        .shots { grid-template-columns: 1fr; max-width: 340px; }
+        .stack { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrap">
+      <header>
+        <span class="mark" aria-hidden="true">
+          <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+            <rect x="4" y="4" width="16" height="16" rx="3" />
+            <line x1="8" y1="9" x2="16" y2="9" />
+            <line x1="8" y1="13" x2="16" y2="13" />
+            <line x1="8" y1="17" x2="12.5" y2="17" />
+          </svg>
+        </span>
+        <h1>Daily Brief</h1>
+        <p class="lede">
+          A personalised news briefing, written fresh each weekday from the topics you choose — and
+          narrated as a two-voice podcast.
+        </p>
+
+        <div class="cta">
+          <!-- TODO (Phase 5): point this at the published repository. -->
+          <a class="btn btn-primary" href="/">Try the demo</a>
+          <a class="btn btn-ghost" href="https://github.com/PedroColombas">View the code</a>
+        </div>
+        <p class="fine">The demo signs you in automatically. No email, no sign-up.</p>
+      </header>
+
+      <section>
+        <h2>The problem</h2>
+        <p class="body">
+          Following a few specific subjects properly means checking several sources every day, or
+          subscribing to newsletters written for someone else's interests. Neither gets you a single
+          thing to read over coffee.
+        </p>
+        <p class="body">
+          Daily Brief takes the topics you actually care about — including ones you describe in your
+          own words, like <em>“what China is doing in chip development”</em> — researches each one
+          separately every weekday, and writes one brief in one voice. If you'd rather listen, it
+          records itself.
+        </p>
+      </section>
+
+      <section>
+        <h2>What it looks like</h2>
+        <p class="body">Real output from the running app, not mock-ups.</p>
+        <div class="shots">
+          <figure>
+            <img src="/landing/today.png" alt="The day's brief, with a while-you-were-away catch-up card" />
+            <figcaption>Your brief, opening with a catch-up on the days you missed.</figcaption>
+          </figure>
+          <figure>
+            <img src="/landing/preferences.png" alt="The preferences screen showing the topic list" />
+            <figcaption>Topics in plain English. Each one becomes a section.</figcaption>
+          </figure>
+          <figure>
+            <img src="/landing/player.png" alt="The podcast player with per-topic chapters" />
+            <figcaption>The same brief as a two-voice podcast, with per-topic chapters.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section>
+        <h2>How it works</h2>
+        <p class="body">
+          One brief is a four-stage pipeline. Each topic is researched on its own rather than lumped
+          into a single query — that one decision is what separates writing that is specific from
+          writing that is vague.
+        </p>
+        <img class="diagram" src="/landing/architecture.svg" alt="Architecture diagram: resolve, retrieve, synthesise, narrate" />
+      </section>
+
+      <section>
+        <h2>The stack, and why</h2>
+        <div class="stack">
+          <div>
+            <h3>Perplexity <code>sonar-pro</code></h3>
+            <p>Search and synthesis in one call, with citations — so there is no scraping, ranking or deduplication layer to build and maintain.</p>
+          </div>
+          <div>
+            <h3>Anthropic Claude</h3>
+            <p>Three jobs, three model sizes: Haiku turns free text into search queries, Opus writes the brief, Sonnet scripts the podcast.</p>
+          </div>
+          <div>
+            <h3>Trigger.dev</h3>
+            <p>Durable orchestration. Each stage is idempotent and retried on its own, so one failed step never sinks the whole run.</p>
+          </div>
+          <div>
+            <h3>Supabase</h3>
+            <p>Postgres, auth and a private audio bucket, with row-level security on every table. The pipeline writes with a service role; the app reads as the user.</p>
+          </div>
+          <div>
+            <h3>React on Vercel</h3>
+            <p>A mobile-first installable PWA. Designed for a phone first because that is where a morning brief is actually read.</p>
+          </div>
+          <div>
+            <h3>OpenAI TTS + ffmpeg</h3>
+            <p>Each speaker voiced separately and synthesised in parallel, then assembled into one episode with a branded intro.</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>What isn't built yet</h2>
+        <ul class="plain">
+          <li>Reader-chosen sources per topic — interesting design work, deliberately deferred.</li>
+          <li>Subscription billing. The unit economics are modelled; the checkout is not built.</li>
+          <li>Push notifications when a brief lands.</li>
+          <li>A native iOS wrapper. The PWA installs to the home screen today.</li>
+        </ul>
+      </section>
+
+      <footer>
+        Built by Pedro Colombas ·
+        <a href="/">Try the demo</a> ·
+        <a href="https://github.com/PedroColombas">View the code</a>
+      </footer>
+    </div>
+  </body>
+</html>

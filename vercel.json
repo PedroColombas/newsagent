@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "comment": "Everything except the API and the static landing page falls through to the SPA.",
+      "source": "/((?!api/|landing).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
