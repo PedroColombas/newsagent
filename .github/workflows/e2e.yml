@@ -12,6 +12,12 @@ on:
 jobs:
   demo-path:
     runs-on: ubuntu-latest
+    # A pull request from a FORK gets no secrets, so DEMO_BASE_URL would be empty and the run would
+    # fail for a reason that has nothing to do with the change. Skip those rather than show a
+    # stranger a red X on their first contribution; pushes and same-repo PRs run normally.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
 
