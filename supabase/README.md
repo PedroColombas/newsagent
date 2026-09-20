@@ -1,64 +1,56 @@
-# News Report Generator — Phase 1: Supabase Foundation
+# Data layer
 
-This is the data layer. Apply these migrations to a fresh Supabase project,
-then everything (pipeline + frontend) builds on top.
+Postgres, auth and audio storage, all on Supabase. Everything else — the app and the
+pipeline — builds on what is defined here, so the migrations are the source of truth for
+the data model. If a table changes, `shared/types.ts` changes in the same commit.
 
-## What's here
+## Migrations
 
-```
-supabase/migrations/
-  0001_initial_schema.sql   Tables, triggers, auto-create preferences on signup
-  0002_rls_policies.sql     Row Level Security — users only see their own data
-  0003_storage.sql          Private podcast-audio bucket + read policy
-shared/
-  types.ts                  TypeScript types mirroring the schema
-```
+Applied in order. `0001`–`0003` are the foundation; the rest are features as they landed.
 
-## Setup steps
+| | |
+|---|---|
+| `0001_initial_schema` | `preferences`, `reports`, `podcast_episodes`; an `updated_at` trigger; and `on_auth_user_created`, which inserts a default preferences row so the app never has to handle "no preferences yet" |
+| `0002_rls_policies` | Row-level security on every table |
+| `0003_storage` | Private `podcast-audio` bucket and its per-user read policy |
+| `0004_recency` → `0006_context_depth` → `0007_drop_recency` | A user-selectable news window, replaced by a single "how much catch-up do you want" control, then the dead columns dropped |
+| `0005_podcast_chapters` | Per-topic chapter marks on an episode |
+| `0008_report_reads` | Which briefs a reader has opened — this is what the catch-up is computed from |
+| `0009_walkthrough_seen`, `0012_tips_seen` | First-run guidance, shown once |
+| `0010_topic_order` | Reader-defined section order |
+| `0011_topic_news_cache` | Per-`(topic, day)` Perplexity results, shared across all readers |
+| `0013_subscriptions` | Tier and status. Modelled, not charged — there is no checkout |
+| `0014_is_demo` | Marks the public demo account, which every paid endpoint checks |
 
-### 1. Create the Supabase project
-- Go to https://supabase.com/dashboard → New Project
-- Note your **Project URL** and these keys (Settings → API):
-  - `anon` key → used by the React frontend
-  - `service_role` key → used by the Trigger.dev pipeline (keep secret, never ship to client)
+## Design decisions baked into the schema
 
-### 2. Apply the migrations
+- **Preferences exist from signup.** A trigger creates the row, so there is no "user without
+  preferences" state to handle anywhere in the app.
+- **Reports and podcasts are read-only from the frontend.** RLS grants users no insert or
+  update policy on those tables; only the pipeline, holding the service role, writes them.
+  This is what makes it safe to ship a public demo account's credentials.
+- **Storage is private**, served through signed URLs, namespaced `{user_id}/{report_id}.mp3`.
+- **One report per user per day**, enforced by `unique(user_id, date)`. That constraint is
+  also the pipeline's idempotency anchor — a Trigger retry cannot produce a second brief.
 
-**Option A — Supabase CLI (recommended):**
-```bash
-supabase link --project-ref <your-project-ref>
-supabase db push
-```
+## Setting up a fresh project
 
-**Option B — SQL Editor (no CLI):**
-Paste each file's contents in order (0001 → 0002 → 0003) into the
-Supabase Dashboard → SQL Editor and run them one at a time.
+1. **Create the project.** Note the Project URL and, from Settings → API, the `anon` key
+   (used by the React app) and the `service_role` key (used only by the pipeline, never
+   shipped to a browser).
 
-### 3. Configure Auth
-Dashboard → Authentication → Providers:
-- Enable **Email** (magic link is simplest for an iPhone PWA — no password to type)
-- Optionally enable **Google** OAuth for one-tap sign-in
+2. **Apply the migrations**, in filename order:
 
-Dashboard → Authentication → URL Configuration:
-- Set **Site URL** to your Vercel domain (e.g. https://yourapp.vercel.app)
-- Add `http://localhost:5173` to redirect URLs for local dev
+   ```bash
+   supabase link --project-ref <your-project-ref>
+   supabase db push
+   ```
 
-### 4. Verify
-- Create a test user (Authentication → Users → Add user)
-- Confirm a row auto-appeared in `preferences` with that user_id
-  (the `on_auth_user_created` trigger does this)
-- Confirm the `podcast-audio` bucket exists (Storage)
+   Or paste each file into the dashboard's SQL editor, one at a time, in order.
 
-## Key design decisions baked in
+3. **Configure auth.** Enable Email — magic link, so there is no password to type on a
+   phone — and optionally Google. Under URL Configuration, set the Site URL to your
+   deployed domain and add `http://localhost:5173` for local development.
 
-- **Auto-preferences on signup** — every new user gets a default preferences
-  row via trigger, so the app never has to handle "no preferences yet".
-- **Reports/podcasts are read-only from the frontend** — only the pipeline
-  (service_role) writes them. This is enforced by RLS having no insert/update
-  policy for users on those tables.
-- **Storage is private** — audio served via signed URLs or the per-user read
-  policy. Files namespaced `{user_id}/{report_id}.mp3`.
-- **One report per user per day** — enforced by `unique(user_id, date)`.
-
-## Next: Phase 2 — Trigger.dev pipeline
-fetch-news (Perplexity) → generate-report (Claude) → generate-podcast (Claude + OpenAI TTS)
+4. **Check it worked.** Add a user from the dashboard and confirm a `preferences` row
+   appeared with their id, and that the `podcast-audio` bucket exists.

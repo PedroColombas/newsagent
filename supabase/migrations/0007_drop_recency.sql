@@ -1,5 +1,5 @@
 -- ============================================================
--- News Report Generator — Drop retired recency columns
+-- Daily — Drop retired recency columns
 -- Migration 0007
 --
 -- 0006 replaced the recency preference with context_depth but left the old

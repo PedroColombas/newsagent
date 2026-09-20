@@ -87,56 +87,55 @@ The `report_mode` and `voice` columns are left in the table UNUSED rather than d
 ## Repo structure
 
 ```
-news-report-generator/
-├── CLAUDE.md                      # this file
-├── apps/web/                      # React PWA → Vercel
-│   ├── src/{components,pages,lib,hooks}/
-│   └── api/                       # Vercel serverless functions
-├── trigger/                       # Trigger.dev pipeline (separate deploy)
-│   ├── jobs/{daily-report,fetch-news,generate-report,generate-podcast}.ts
-│   └── lib/{perplexity,anthropic,openai-tts}.ts
-├── supabase/
-│   ├── migrations/                # 0001 schema, 0002 RLS, 0003 storage
-│   └── README.md
-└── shared/types.ts                # shared TS types — mirror the schema
+daily/
+├── CLAUDE.md                  # this file
+├── README.md                  # the public one — what this is, and why each choice
+├── BACKLOG.md                 # execution order; work top to bottom, do not jump phases
+├── apps/web/                  # React PWA → Vercel
+│   ├── src/{pages,components,hooks,lib,auth}/
+│   ├── api/                   # Vercel serverless functions (generate, podcast, suggest)
+│   └── public/landing/        # the landing page, served OUTSIDE the SPA
+├── trigger/src/               # Trigger.dev pipeline (separate deploy)
+│   ├── jobs/                  # one file per stage + the cron + the demo seeders
+│   ├── lib/                   # Perplexity, Anthropic, TTS, audio assembly, concurrency
+│   └── fixtures/              # demo + TTS-test data
+├── supabase/migrations/       # 0001–0014; schema, RLS, storage
+├── shared/                    # types + the topic planner, used by BOTH app and pipeline
+├── e2e/                       # Playwright, run against the deployed app
+└── docs/                      # architecture diagram + design/ (Claude Design exports)
 ```
 
-## Current state — DONE
+`shared/` matters: `plan-topics.ts` is the one function that decides what a brief
+contains, so the app's preview and the pipeline's real section list cannot drift.
 
-**Phase 1 — Supabase foundation (complete).**
-- `supabase/migrations/0001_initial_schema.sql` — tables (`preferences`,
-  `reports`, `podcast_episodes`), `updated_at` trigger, and an
-  `on_auth_user_created` trigger that auto-inserts a default preferences row.
-- `supabase/migrations/0002_rls_policies.sql` — RLS: users see only their own
-  rows. Reports + podcasts are read-only from the frontend; pipeline writes via
-  service_role (bypasses RLS).
-- `supabase/migrations/0003_storage.sql` — private `podcast-audio` bucket +
-  per-user read policy.
-- `shared/types.ts` — TS types matching the schema.
+## Current state
 
-Schema is the source of truth. If you change a table, update BOTH the migration
-AND `shared/types.ts` in the same change.
+**Everything below is built, deployed and covered by the e2e suite.** The app is live
+on Vercel, the pipeline is deployed to Trigger.dev, and a public demo account serves
+seeded briefs with all paid calls gated off.
 
-## Next — TO DO
+- **Data** — 14 migrations. RLS on every table; reports and podcasts are read-only from
+  the frontend, the pipeline writes as service_role. Private `podcast-audio` bucket.
+- **Pipeline** — `fetch-news` (Perplexity, one query per topic, shared per-day cache) →
+  `generate-report` (Opus synthesis, primers, "while you were away" recaps) →
+  `generate-podcast` (Sonnet script, OpenAI TTS, ffmpeg assembly). `daily-report` is the
+  cron orchestrator. Plus `seed-demo-briefs`, `reset-demo`, `seed-test-episode`.
+- **App** — auth, bottom nav, Today / History / Report / Preferences / Profile, the setup
+  wizard, and the docked podcast player.
+- **Shopfront** — landing page at `/landing/`, architecture diagram, README.
 
-**Phase 2 — Trigger.dev pipeline** (do this next; strongest ground for owner)
-- `fetch-news.ts` — translate each user's topics into Perplexity queries
-  (Level 3 via a Claude call), run one query per topic, collect results.
-  ⚠️ The query-generation prompt design is a COLLABORATIVE task — pause and work
-  through it with the owner rather than finalising alone.
-- `generate-report.ts` — Claude synthesises results into a sectioned report,
-  honouring report_mode, voice, exclusions, max_topics. Writes to `reports`.
-- `generate-podcast.ts` — Claude rewrites report into a conversational script,
-  OpenAI TTS → MP3, upload to Storage, write `podcast_episodes`.
-- `daily-report.ts` — cron orchestrator: for each user whose `delivery_hour`
-  matches, run the chain.
+Schema is the source of truth. If you change a table, update BOTH the migration AND
+`shared/types.ts` in the same change.
 
-**Phase 3** — React PWA shell: Supabase Auth, bottom nav (Today / History /
-Preferences / Profile), routing.
-**Phase 4** — Report view (native-reader feel) + history list.
-**Phase 5** — Preferences UI: genre chips → subtopic chips → custom interests →
-mode/voice segmented controls. The most important screen — it IS the product.
-**Phase 6** — Podcast mode: docked mini-player (Spotify-style), full-screen expand.
+Two things are deliberately OFF, for cost, not because they are broken: the weekday cron
+(see the note above) and automatic podcast generation. Do not switch either on to "fix"
+something.
+
+## What to work on next
+
+**Read `BACKLOG.md` — it is the ordered plan and it overrides any stale list here.**
+It is written around one goal: this is a portfolio artifact, so nothing in the demo path
+may trigger a paid API call, and a visitor must never need an account.
 
 ## Conventions
 

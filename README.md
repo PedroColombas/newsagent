@@ -142,3 +142,7 @@ Secrets are environment variables only. `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
 `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, `PERPLEXITY_API_KEY`, `OPENAI_API_KEY` —
 and `ELEVENLABS_API_KEY` to wake the dormant voice path. The service role key is server-side only
 and never reaches the browser; the app uses the anon key and relies on row-level security.
+
+## Licence
+
+[MIT](LICENSE).

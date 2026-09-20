@@ -1,5 +1,5 @@
 -- ============================================================
--- News Report Generator — Read tracking
+-- Daily — Read tracking
 -- Migration 0008
 --
 -- Per-report read state. `reports` stays read-only from the frontend

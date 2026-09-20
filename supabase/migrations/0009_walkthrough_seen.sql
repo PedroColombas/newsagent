@@ -1,5 +1,5 @@
 -- ============================================================
--- News Report Generator — First-run walkthrough flag
+-- Daily — First-run walkthrough flag
 -- Migration 0009
 --
 -- Per-user flag gating the one-time coach-mark walkthrough. Cross-device (unlike a

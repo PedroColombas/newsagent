@@ -1,5 +1,5 @@
 -- ============================================================
--- News Report Generator — Podcast chapters
+-- Daily — Podcast chapters
 -- Migration 0005
 --
 -- Per-topic chapter markers for the podcast player. Stored as

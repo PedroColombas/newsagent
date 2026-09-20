@@ -1,5 +1,5 @@
 -- ============================================================
--- News Report Generator — Recency controls
+-- Daily — Recency controls
 -- Migration 0004
 --
 -- User-selectable news recency on preferences:

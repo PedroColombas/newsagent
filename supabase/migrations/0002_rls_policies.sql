@@ -1,5 +1,5 @@
 -- ============================================================
--- News Report Generator — Row Level Security
+-- Daily — Row Level Security
 -- Migration 0002
 --
 -- Every table is scoped so a user can only ever touch their

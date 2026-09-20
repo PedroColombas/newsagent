@@ -1,5 +1,5 @@
 -- ============================================================
--- News Report Generator — Storage
+-- Daily — Storage
 -- Migration 0003
 --
 -- Private bucket for podcast audio. Files are namespaced by

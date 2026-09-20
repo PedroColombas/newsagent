@@ -1,5 +1,5 @@
 -- ============================================================
--- News Report Generator — Manual topic ordering
+-- Daily — Manual topic ordering
 -- Migration 0010
 --
 -- User-chosen order for the report's sections (set by drag-to-reorder in the wizard review).

@@ -1,5 +1,5 @@
 -- ============================================================
--- News Report Generator — Topic context depth (replaces recency)
+-- Daily — Topic context depth (replaces recency)
 -- Migration 0006
 --
 -- Replaces the per-report recency controls with a single "catch-up depth":
