@@ -1,9 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" rx="116" fill="#c0512b" />
-  <g fill="none" stroke="#faf8f4" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="150" y="140" width="212" height="232" rx="34" />
-    <line x1="196" y1="208" x2="316" y2="208" />
-    <line x1="196" y1="256" x2="316" y2="256" />
-    <line x1="196" y1="304" x2="262" y2="304" />
-  </g>
+<!-- The "Daily" mark reduced to what survives a 32px favicon: the D, and the sunrise arc that sits
+     over the "ai" in the full wordmark.
+     The D is drawn as a path, not <text> — an icon renders on devices that do not have Hanken
+     Grotesk, and a font fallback would quietly change the letterform.
+     The manifest declares this "any maskable", so Android may crop it to a circle: everything sits
+     inside the inner 80% safe zone, and the paper ground is full-bleed so a crop never reveals
+     transparent corners. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="t">
+  <title id="t">Daily</title>
+  <rect width="512" height="512" rx="116" fill="#faf8f4" />
+  <!-- sunrise arc -->
+  <path d="M196 158 a75 75 0 0 1 120 0" fill="none" stroke="#c0512b" stroke-width="26" stroke-linecap="round" />
+  <!-- D: outer silhouette, then the counter, knocked out with evenodd -->
+  <path fill="#c0512b" fill-rule="evenodd"
+        d="M160 200 H270 C330 200 352 240 352 300 C352 360 330 400 270 400 H160 Z
+           M215 255 H265 C285 255 297 272 297 300 C297 328 285 345 265 345 H215 Z" />
 </svg>

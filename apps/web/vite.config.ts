@@ -74,8 +74,8 @@ export default defineConfig(({ mode }) => {
           navigateFallbackDenylist: [/^\/landing/, /^\/api\//],
         },
         manifest: {
-          name: "Daily Brief",
-          short_name: "Daily Brief",
+          name: "Daily",
+          short_name: "Daily",
           description: "Your day, briefed — a personalised daily news report and podcast.",
           theme_color: "#faf8f4",
           background_color: "#faf8f4",

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 600" width="1040" height="600" role="img" aria-labelledby="title desc">
-  <title id="title">Daily Brief architecture: how one brief is made</title>
+  <title id="title">Daily architecture: how one brief is made</title>
   <desc id="desc">A four-stage pipeline orchestrated by Trigger.dev. Claude Haiku resolves free-text interests into search queries, Perplexity retrieves the news one query per topic, Claude Opus synthesises the sectioned brief, and Claude Sonnet plus OpenAI text-to-speech produce the podcast. Supabase stores preferences, reports and audio.</desc>
 
   <style>
@@ -18,7 +18,7 @@
   <rect x="0" y="0" width="1040" height="600" rx="18" fill="#faf8f4"/>
   <rect x="0.5" y="0.5" width="1039" height="599" rx="18" fill="none" stroke="#ece6db"/>
 
-  <text class="t h1" x="40" y="50">Daily Brief — how one brief is made</text>
+  <text class="t h1" x="40" y="50">Daily — how one brief is made</text>
   <text class="t sub" x="40" y="74">A multi-stage pipeline: retrieval, synthesis, and audio generation.</text>
 
   <!-- INPUT -->

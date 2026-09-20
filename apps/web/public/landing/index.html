@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Daily Brief — your commute, fully briefed</title>
+<title>Daily — your commute, fully briefed</title>
 <meta name="description" content="A personalised news briefing, written fresh each weekday from the topics you choose. Read it in four minutes, or listen on the way in.">
 
 <!-- Link previews, for when this URL is pasted into a CV, LinkedIn or a message. -->
-<meta property="og:title" content="Daily Brief — your commute, fully briefed">
+<meta property="og:title" content="Daily — your commute, fully briefed">
 <meta property="og:description" content="A personalised news briefing, written fresh each weekday from the topics you choose. Read it in four minutes, or listen on the way in.">
 <meta property="og:image" content="/landing/today.png">
 <meta property="og:type" content="website">
@@ -24,6 +24,11 @@
   a{color:#c0512b;text-decoration:none;}
   a:hover{color:#9c3f20;}
   .shot{width:100%;height:100%;object-fit:cover;display:block;}
+  /* "Daily" wordmark — a sunrise arc over the "ai". Scales from font-size alone; leave 0.5em
+     clear above it, because the arc overshoots the cap height. */
+  .daily-logo{font-weight:700;letter-spacing:-.022em;color:#1c1a17;white-space:nowrap;}
+  .daily-logo__ai{position:relative;color:#c0512b;}
+  .daily-logo__ai svg{position:absolute;left:50%;transform:translateX(-50%);top:-.41em;width:1.05em;height:.5em;}
   @media (max-width:820px){
     .feat{grid-template-columns:1fr !important;gap:32px !important;}
     .feat .phone{grid-column:1 !important;grid-row:2 !important;justify-self:center !important;}
@@ -40,11 +45,8 @@
   <div style="max-width:1080px;margin:0 auto;padding:0 28px;">
 
     <!-- NAV -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:26px 0;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:34px;height:34px;border-radius:10px;background:#c0512b;display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#faf8f4" stroke-width="2" stroke-linecap="round"><path d="M7.4 13.2 a4.6 4.6 0 0 1 9.2 0"/><line x1="4" y1="13.2" x2="20" y2="13.2"/><line x1="7.6" y1="17.4" x2="16.4" y2="17.4"/></svg></div>
-        <span style="font-size:17.5px;font-weight:700;letter-spacing:-.02em;">Daily Brief</span>
-      </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:32px 0 26px;">
+      <span class="daily-logo" style="font-size:24px;">D<span class="daily-logo__ai">ai<svg viewBox="0 0 26 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M2 10.5 a14 14 0 0 1 22 0"/></svg></span>ly</span>
     </div>
 
     <!-- HERO -->
@@ -168,7 +170,7 @@
     </div>
 
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;padding:26px 0 40px;border-top:1px solid #ece6db;">
-      <span style="font-size:13px;color:#8a8579;">© 2026 Daily Brief</span>
+      <span style="font-size:13px;color:#8a8579;">© 2026 Daily</span>
       <span style="font-size:13px;color:#8a8579;">Privacy · Terms · Contact</span>
     </div>
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useAuth, demoAvailable } from "../auth/AuthProvider";
+import { Logo } from "../components/Logo";
 
 export function Login() {
   const { signInWithEmail, signInWithGoogle, signInAsDemo } = useAuth();
@@ -40,20 +41,9 @@ export function Login() {
 
   return (
     <div className="mx-auto flex h-full max-w-md flex-col px-7 pb-8 pt-6">
-      {/* Brand + promise — vertically centred */}
+      {/* Wordmark + promise — vertically centred */}
       <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <div
-          className="flex h-[58px] w-[58px] items-center justify-center rounded-[17px] bg-[var(--accent)]"
-          style={{ boxShadow: "0 8px 20px -8px rgba(192,81,43,.55)" }}
-        >
-          <svg width="29" height="29" viewBox="0 0 24 24" fill="none" stroke="var(--on-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="4" y="4" width="16" height="16" rx="3" />
-            <line x1="8" y1="9" x2="16" y2="9" />
-            <line x1="8" y1="13" x2="16" y2="13" />
-            <line x1="8" y1="17" x2="12.5" y2="17" />
-          </svg>
-        </div>
-        <span className="mt-4 text-xl font-bold tracking-tight">Daily Brief</span>
+        <Logo size={34} />
         <h1 className="mt-5 text-[27px] font-bold leading-tight tracking-tight">Your day, briefed.</h1>
         <p className="mt-3 max-w-[260px] text-[14.5px] leading-relaxed text-[var(--muted)]">
           One personalised report each morning — your topics, summarised and ready to read or hear.

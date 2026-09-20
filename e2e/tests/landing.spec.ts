@@ -11,7 +11,7 @@ test("the landing page is not swallowed by the app's service worker", async ({ p
   });
 
   await page.goto("/landing/");
-  await expect(page).toHaveTitle(/daily brief/i);
+  await expect(page).toHaveTitle(/^Daily —/);
   await expect(page.getByRole("heading", { name: /fully briefed/i })).toBeVisible();
 });
 

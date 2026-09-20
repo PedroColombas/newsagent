@@ -1,4 +1,4 @@
-# Daily Brief
+# Daily
 
 A personalised news briefing that writes and narrates itself. You choose the topics once; every
 weekday morning it researches them, writes one report, and — on request — reads it to you as an

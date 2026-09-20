@@ -55,7 +55,7 @@ export function Report() {
 
   async function share() {
     if (!report?.markdown) return;
-    const payload = { title: `Daily Brief — ${formatReportDate(report.date)}`, text: report.markdown };
+    const payload = { title: `Daily — ${formatReportDate(report.date)}`, text: report.markdown };
     try {
       if (navigator.share) await navigator.share(payload);
       else await navigator.clipboard.writeText(report.markdown);

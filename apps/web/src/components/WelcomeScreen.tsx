@@ -1,3 +1,5 @@
+import { Logo } from "./Logo";
+
 // First-run welcome — a simple, warm hello before the setup wizard. Visual-first, minimal copy.
 // (Replaces the old multi-slide trailer, which belonged in the app's marketing, not the app.)
 export function WelcomeScreen({ onStart }: { onStart: () => void }) {
@@ -11,17 +13,14 @@ export function WelcomeScreen({ onStart }: { onStart: () => void }) {
       />
 
       <div className="relative flex flex-1 flex-col justify-center">
-        {/* Brief mark — three condensing lines, echoing "news, distilled" */}
-        <div className="mb-9 flex flex-col gap-1.5" aria-hidden>
-          <span className="h-2 w-14 rounded-full bg-[var(--accent)]" />
-          <span className="h-2 w-10 rounded-full bg-[var(--accent)]/60" />
-          <span className="h-2 w-6 rounded-full bg-[var(--accent)]/30" />
-        </div>
-
+        {/* The wordmark carries this screen. Per the logo spec it is the only mark, so the old
+            three-line device that used to sit above the headline is gone rather than competing. */}
         <h1 className="text-[38px] font-bold leading-[1.06] tracking-tight text-[var(--ink)]">
           Welcome to
-          <br />
-          your Daily Brief.
+          {/* pt-2 buys the arc its clearance — it overshoots the cap height by half an em. */}
+          <span className="block pt-2">
+            <Logo size={38} />.
+          </span>
         </h1>
         <p className="mt-4 text-[16.5px] leading-relaxed text-[var(--muted)]">
           All the news you care about, every day — gathered, summarised, and shaped exactly the way
