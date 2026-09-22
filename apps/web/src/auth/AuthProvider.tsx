@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { appUrl } from "../lib/routes";
 
 // Public demo account. These are deliberately public — they ship in the browser bundle so a visitor
 // can look around without signing up. The account is read-only in practice: every paid action is
@@ -42,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Magic link — no password. Supabase emails a sign-in link back to the app.
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: appUrl() },
     });
     return { error: error ? error.message : null };
   }
@@ -52,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // (with a Google Cloud OAuth client). Apple sign-in is deferred to the App Store build.
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: appUrl() },
     });
     return { error: error ? error.message : null };
   }

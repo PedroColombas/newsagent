@@ -33,7 +33,7 @@ const shot = async (name) => {
   console.log("captured", name);
 };
 
-await page.goto(base);
+await page.goto(new URL("/app", base).href);
 await page.getByRole("button", { name: /view the demo/i }).click();
 await page.locator('[data-tour="topic"]').first().waitFor({ timeout: 30000 });
 

@@ -45,7 +45,7 @@ async function stubTable(page: Page, table: string, body: unknown): Promise<void
 }
 
 async function enterDemo(page: Page): Promise<void> {
-  await page.goto("/");
+  await page.goto("/app");
   await page.getByRole("button", { name: /view the demo/i }).click();
 }
 

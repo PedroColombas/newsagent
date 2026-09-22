@@ -69,9 +69,10 @@ export default defineConfig(({ mode }) => {
         registerType: "autoUpdate",
         workbox: {
           // WITHOUT THIS the service worker serves the app shell for every navigation, so a visitor
-          // opening /landing gets the login screen instead of the landing page. curl sees the real
-          // page (no service worker), which makes this a confusing one to diagnose.
-          navigateFallbackDenylist: [/^\/landing/, /^\/api\//],
+          // opening the landing page at / gets the login screen instead. curl sees the real page
+          // (no service worker), which makes this a confusing one to diagnose. An allowlist rather
+          // than a denylist: the app owns /app and nothing else.
+          navigateFallbackAllowlist: [/^\/app/],
         },
         manifest: {
           name: "Daily",
@@ -80,7 +81,7 @@ export default defineConfig(({ mode }) => {
           theme_color: "#faf8f4",
           background_color: "#faf8f4",
           display: "standalone",
-          start_url: "/",
+          start_url: "/app",
           icons: [
             { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any maskable" },
           ],

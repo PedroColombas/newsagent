@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 // Signs in exactly as a visitor does — by pressing the demo button. No credentials live in this
 // test, because the app already carries them for precisely this purpose.
 async function enterDemo(page: Page): Promise<void> {
-  await page.goto("/");
+  await page.goto("/app");
   await page.getByRole("button", { name: /view the demo/i }).click();
   // The banner is the first thing that proves we are inside the demo account.
   await expect(page.getByText(/sample briefs/i)).toBeVisible();

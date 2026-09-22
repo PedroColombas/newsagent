@@ -5,18 +5,18 @@ import { test, expect } from "@playwright/test";
 // screen — and only in a real browser, since curl has no service worker to be fooled by.
 test("the landing page is not swallowed by the app's service worker", async ({ page }) => {
   // Visit the app first, so the service worker registers and takes control.
-  await page.goto("/");
+  await page.goto("/app");
   await page.evaluate(async () => {
     await navigator.serviceWorker?.ready;
   });
 
-  await page.goto("/landing/");
+  await page.goto("/");
   await expect(page).toHaveTitle(/^Daily —/);
   await expect(page.getByRole("heading", { name: /fully briefed/i })).toBeVisible();
 });
 
 test("the landing page leads into the demo, and the shots all load", async ({ page }) => {
-  await page.goto("/landing/");
+  await page.goto("/");
   await expect(page.getByRole("link", { name: /try the demo/i }).first()).toBeVisible();
 
   // Every image has to actually load; a broken path is invisible against the pale phone mock.

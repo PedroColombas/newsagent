@@ -34,7 +34,7 @@ async function demoAccessToken(page: Page): Promise<string | null> {
 
 test.describe("the demo account cannot spend money", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/app");
     await page.getByRole("button", { name: /view the demo/i }).click();
     await expect(page.getByText(/sample briefs/i)).toBeVisible();
   });

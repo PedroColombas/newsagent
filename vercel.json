@@ -2,8 +2,17 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
-      "comment": "Everything except the API and the static landing page falls through to the SPA.",
-      "source": "/((?!api/|landing).*)",
+      "comment": "The site root is the landing page — that is the link that goes on a CV.",
+      "source": "/",
+      "destination": "/landing/index.html"
+    },
+    {
+      "comment": "The app lives under /app. Every route below it falls through to the SPA shell, which React Router then reads (see lib/routes.ts).",
+      "source": "/app",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/app/(.*)",
       "destination": "/index.html"
     }
   ]

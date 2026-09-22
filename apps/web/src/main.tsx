@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import { APP_BASE } from "./lib/routes";
 import { AuthProvider } from "./auth/AuthProvider";
 import { PlayerProvider } from "./player/PlayerProvider";
 import { App } from "./App";
@@ -11,7 +12,7 @@ if (!root) throw new Error("Root element #root not found");
 
 createRoot(root).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={APP_BASE}>
       <AuthProvider>
         <PlayerProvider>
           <App />

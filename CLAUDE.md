@@ -94,7 +94,7 @@ daily/
 ├── apps/web/                  # React PWA → Vercel
 │   ├── src/{pages,components,hooks,lib,auth}/
 │   ├── api/                   # Vercel serverless functions (generate, podcast, suggest)
-│   └── public/landing/        # the landing page, served OUTSIDE the SPA
+│   └── public/landing/        # the landing page — served at / ; the app lives at /app
 ├── trigger/src/               # Trigger.dev pipeline (separate deploy)
 │   ├── jobs/                  # one file per stage + the cron + the demo seeders
 │   ├── lib/                   # Perplexity, Anthropic, TTS, audio assembly, concurrency
