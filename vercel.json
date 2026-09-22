@@ -1,19 +1,19 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
+  "routes": [
     {
-      "comment": "The site root is the landing page — that is the link that goes on a CV.",
-      "source": "/",
-      "destination": "/landing/index.html"
+      "comment": "MUST be `routes`, not `rewrites`. Rewrites are only consulted AFTER the filesystem, and the build puts the app shell at dist/index.html — so a rewrite for / never fires and the root keeps serving the app. `routes` is evaluated before the filesystem, which is the whole point of this first rule.",
+      "src": "/",
+      "dest": "/landing/index.html"
     },
     {
-      "comment": "The app lives under /app. Every route below it falls through to the SPA shell, which React Router then reads (see lib/routes.ts).",
-      "source": "/app",
-      "destination": "/index.html"
+      "comment": "Everything that exists on disk: the landing page's images, the app's JS and CSS, the manifest and service worker, and the API functions.",
+      "handle": "filesystem"
     },
     {
-      "source": "/app/(.*)",
-      "destination": "/index.html"
+      "comment": "Whatever is left under /app is a client-side route, so hand it the SPA shell and let React Router read the path (basename in src/lib/routes.ts).",
+      "src": "/app(?:/.*)?",
+      "dest": "/index.html"
     }
   ]
 }
