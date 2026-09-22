@@ -214,20 +214,17 @@ framing before they need the product.
       * reasoning behind each stack choice (why Perplexity over NewsAPI, why
         Trigger.dev, why Supabase)
       * an honest roadmap of what is not built yet
-* [ ] Light tidy only: dead code, naming, folder coherence. **No refactors.**
+* [x] Light tidy only: dead code, naming, folder coherence. **No refactors.**
       Legible and honestly described beats immaculate.
-* [ ] Publish the repository.
-* [ ] **Wire the "View the code" button.** The button is already on the landing
-      page, next to "Try the demo" in the closing call to action, and is
-      deliberately inert — it carries no `href` until the repo is public,
-      because a link to a private repo 404s. Publishing the repo is therefore
-      not finished until this is done: right now the button is visible and does
-      nothing, which a visitor reads as broken.
-      One line, in `apps/web/public/landing/index.html`, on the element marked
-      `data-code-link`: add `href="https://github.com/PedroColombas/newsagent"`.
-      A test in `e2e/tests/landing.spec.ts` already asserts that the button is
-      either unlinked or pointing at a real github.com URL, so a half-wired
-      version fails CI.
+* [x] Publish the repository. Public at github.com/PedroColombas/newsagent.
+      Checked first, because it cannot be undone: no API keys anywhere in the
+      history, and the demo spending gate green against production.
+* [x] **Wire the "View the code" button.** The button is already on the landing
+      page, next to "Try the demo", and now points at the repo. It was
+      deliberately inert until publication, because a link to a private repo
+      404s — worse than a button that does nothing. `landing.spec.ts` asserts it
+      is either unlinked or pointing at a real github.com URL, so a half-wired
+      version fails CI rather than shipping.
 
 Note on where the technical content lives. The architecture diagram, the stack
 reasoning and the "not built yet" list were built into the landing page first and
