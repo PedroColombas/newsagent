@@ -4,7 +4,7 @@
 //   node screenshot.mjs <url> <output.png> [width] [height]
 //
 // e.g.  node screenshot.mjs http://localhost:8899/landing/ ../landing-full.png 1180 full
-//       node screenshot.mjs https://newsagent-seven.vercel.app ../docs/shot-today.png 390 844
+//       node screenshot.mjs https://dailyeditionapp.vercel.app ../docs/shot-today.png 390 844
 import { chromium } from "@playwright/test";
 
 const [url, out, w = "390", h = "844"] = process.argv.slice(2);
