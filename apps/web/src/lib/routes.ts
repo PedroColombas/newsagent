@@ -5,6 +5,10 @@
 // drops you on the marketing page instead of signing you in), and the PWA's start_url.
 export const APP_BASE = "/app";
 
+// Served by apps/web/vercel.json — NOT the repo root. Vercel's root directory for this project is
+// apps/web (which is why apps/web/api/* answers at /api/*), so a vercel.json at the repo root is
+// never read. There used to be one there, quietly doing nothing.
+//
 // How the split is actually served, because vercel.json cannot carry comments and this is easy to
 // "tidy" into something broken:
 //
