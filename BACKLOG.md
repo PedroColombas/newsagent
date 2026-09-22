@@ -200,8 +200,15 @@ framing before they need the product.
 * [x] Landing page: problem, screenshots, and a single **Try the demo** button.
       The architecture diagram and the stack were built into this page first, then
       moved to the README — see the note below.
-* [ ] Domain decision: own domain (roughly 10 euros a year, reads as more
-      considered on a CV) or a route on the existing Vercel project.
+* [x] Domain decision: resolved WITHOUT buying one. The paid domains worth
+      having were taken or not worth the money, so the project moved to
+      `dailyeditionapp.vercel.app` ("edition" is the word the app and landing
+      page already use), and the landing page now serves at the ROOT with the
+      app at `/app`. The CV link is the bare address.
+      Note for later: the Vercel config that is actually read is
+      `apps/web/vercel.json`, not the repo root — the project's root directory
+      is `apps/web`. It must use `routes`, not `rewrites`, or the root keeps
+      serving the app. See `apps/web/src/lib/routes.ts`.
 
 ---
 
