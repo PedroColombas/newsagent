@@ -73,6 +73,11 @@ export default defineConfig(({ mode }) => {
           // (no service worker), which makes this a confusing one to diagnose. An allowlist rather
           // than a denylist: the app owns /app and nothing else.
           navigateFallbackAllowlist: [/^\/app/],
+          // Workbox maps a request for a directory to <dir>/index.html by default, so a navigation
+          // to "/" matched the PRECACHED app shell directly and never reached the fallback rule
+          // above — the allowlist looked correct and did nothing. Turning it off is what actually
+          // lets the site root reach the network, and the landing page.
+          directoryIndex: null,
         },
         manifest: {
           name: "Daily",
